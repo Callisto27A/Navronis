@@ -1,0 +1,84 @@
+{
+  "inputs": {
+    "thrust_N": 30000.0,
+    "chamber_pressure_Pa": 12000000.0,
+    "mixture_ratio": 2.6,
+    "propellant": "LOX/CH4",
+    "convergent_half_angle_deg": 30.0
+  },
+  "combustor": {
+    "throat_diameter_mm": 42.64872372458461,
+    "throat_area_cm2": 14.285714285714283,
+    "chamber_diameter_mm": 91.47911113425532,
+    "chamber_area_cm2": 65.72547804155809,
+    "contraction_ratio": 4.600783462909067,
+    "chamber_length_mm": 235.9108809294045,
+    "cylindrical_length_mm": 193.62252495599387,
+    "convergent_length_mm": 42.288355973410646,
+    "chamber_volume_liters": 1.4285714285714284,
+    "characteristic_length_m": 1.0,
+    "stay_time_ms": 1.3503733132963323,
+    "c_star_m_s": 1760.6962732986144
+  },
+  "mass_flow": {
+    "total_kg_s": 9.73640792158916,
+    "fuel_kg_s": 2.704557755996989,
+    "oxidizer_kg_s": 7.0318501655921715
+  },
+  "thermal_screen": {
+    "peak_throat_heat_flux_MW_m2": 85.95673349368889
+  },
+  "acoustic_screen": {
+    "1T_Hz": 8013.666297491758,
+    "1R_Hz": 16677.32104053565,
+    "1L_Hz": 2651.1112595348754
+  },
+  "structural_screen": {
+    "min_wall_thickness_mm": 2.9404000007439213,
+    "recommended_wall_thickness_mm": 3.6755000009299015
+  },
+  "provenance": {
+    "total_mass_flow": {
+      "equation": "mdot = (P_c * A_t_est) / c*",
+      "source": "NASA SP-125 Eq. (1-9)",
+      "status": "PRELIMINARY_DESIGN",
+      "assumptions": "Isentropic choked flow with estimated thrust coefficient Cf ~ 1.75"
+    },
+    "throat_diameter": {
+      "equation": "D_t = sqrt(4 * A_t / pi)",
+      "source": "NASA SP-125 Chapter 4 / Huzel & Huang",
+      "status": "PRELIMINARY_DESIGN",
+      "assumptions": "Axisymmetric circular sonic throat"
+    },
+    "chamber_diameter": {
+      "equation": "D_c = D_t * sqrt(eps_c)",
+      "source": "Geometric identity from contraction ratio",
+      "status": "PRELIMINARY_DESIGN",
+      "assumptions": "Cylindrical combustion chamber"
+    },
+    "chamber_length": {
+      "equation": "L_c = L_cyl + L_conv",
+      "source": "NASA SP-125 Eq. (4-5)",
+      "status": "PRELIMINARY_DESIGN",
+      "assumptions": "Straight cylindrical barrel + truncated conical convergent section"
+    },
+    "heat_flux_screen": {
+      "equation": "q_throat = h_g * (T_aw - T_wg)",
+      "source": "Bartz, D.R. (1957) Jet Propulsion 27(1)",
+      "status": "SCREENING_ONLY",
+      "assumptions": "Isentropic core flow, sonic throat, assumed gas wall temp 850 K"
+    },
+    "acoustic_modes": {
+      "equation": "f_1T = 1.8412 * a / (pi * D_c)",
+      "source": "NASA SP-194 Liquid Rocket Combustion Instability",
+      "status": "SCREENING_ONLY",
+      "assumptions": "Rigid cylinder cavity, uniform gas, zero mean flow"
+    },
+    "wall_thickness_screen": {
+      "equation": "t_w = P_c * R_c / (sigma_yield / SF)",
+      "source": "ASME Section VIII Div 1 / Thin-wall hoop stress",
+      "status": "SCREENING_ONLY",
+      "assumptions": "Thin cylinder, uniform internal pressure, zero thermal gradient stress"
+    }
+  }
+}

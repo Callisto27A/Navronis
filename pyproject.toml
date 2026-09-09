@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kryptonis-propulsion-equations"
+version = "0.1.0"
+description = "Authority-controlled analytical equations for liquid rocket propulsion, thrust chamber sizing, Bartz heat transfer, regenerative cooling, and nozzle gas dynamics."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Kryptonis Core Team", email = "dev@kryptonis.space" }
+]
+keywords = [
+    "rocket-propulsion",
+    "bartz-equation",
+    "regenerative-cooling",
+    "thrust-chamber",
+    "aerospace-engineering",
+    "gas-dynamics",
+    "nozzle-contour",
+    "analytical-equations"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Aerospace Engineers",
+    "Topic :: Scientific/Engineering :: Physics",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12"
+]
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.10.0"
+]
+
+[project.scripts]
+kryptonis-chamber = "kryptonis.propulsion_equations.cli:main"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0"
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/Ritik27Payak/Navronis"
+Documentation = "https://github.com/Ritik27Payak/Navronis/tree/main/docs"
+Repository = "https://github.com/Ritik27Payak/Navronis.git"
+Issues = "https://github.com/Ritik27Payak/Navronis/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --strict-markers"

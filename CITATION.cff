@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software in academic research or preliminary engineering, please cite it as below."
+authors:
+  - name: "Kryptonis Core Team"
+title: "Kryptonis Propulsion: Authority-Controlled Liquid Rocket Analytical Toolkit"
+version: 0.1.0
+date-released: 2026-09-09
+url: "https://github.com/kryptonis-space/kryptonis-propulsion-equations"
+license: Apache-2.0
+keywords:
+  - rocket propulsion
+  - thrust chamber
+  - liquid rocket
+  - bartz equation
+  - combustion stability
