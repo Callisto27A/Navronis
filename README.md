@@ -4,12 +4,13 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-brightgreen.svg)](https://python.org)
-[![Build & Test](https://img.shields.io/badge/Tests-26%20Passed-success.svg)](#verification--testing)
+[![Build & Test](https://img.shields.io/badge/Tests-27%20Passed-success.svg)](#verification--testing)
 [![Engineering Pedigree](https://img.shields.io/badge/Physics-Strict%20Provenance-orange.svg)](#primary-literature--pedigree)
 
 **An authority-controlled, first-principles liquid rocket preliminary propulsion analytical toolkit with primary literature provenance.**
 
 [Key Capabilities](#key-capabilities) •
+[4 Canonical Injector Families](#the-4-canonical-injector-families) •
 [Quick Start](#quick-start) •
 [CLI Usage](#command-line-interface) •
 [Self-Explaining Provenance](#self-explaining-provenance) •
@@ -26,8 +27,19 @@ Most preliminary rocket propulsion scripts in circulation rely on undocumented c
 
 **Navronis** is built on a strict mathematical foundation:
 - **Zero Silent Defaults:** Inputs and intermediate results are strictly validated. Non-physical states (e.g. negative throat areas, sub-unity contraction ratios, negative injector pressure drops) fail explicitly rather than silently propagating errors.
-- **Traceable Engineering Provenance:** Every computed parameter carries its governing equation, validity domain, and exact literature citation (NASA SP-125, NASA SP-194, Bartz 1957, Lorenzetto-Lefebvre 1977, Dressler 2000, Rupe 1956).
+- **Traceable Engineering Provenance:** Every computed parameter carries its governing equation, validity domain, and exact literature citation (NASA SP-125, NASA SP-194, Bartz 1957, Lorenzetto-Lefebvre 1977, Bazarov-Yang 1998, Dressler 2000, Rupe 1956).
 - **Zero Heavy CFD/CAD Dependencies:** Pure Python, NumPy, and SciPy core. Runs instantaneously on Linux, macOS, and Windows.
+
+---
+
+## The 4 Canonical Injector Families
+
+Rather than attempting to model dozens of niche injector variations, Navronis strictly focuses on the **4 canonical injector families** that power virtually all liquid rocket propulsion systems:
+
+1. **Shear Coaxial Injectors (`coaxial`):** High-speed annular gas shears a central liquid core (e.g. SSME / RS-25, RL10, Vulcain, Raptor).
+2. **Centrifugal Swirl Coaxial Injectors (`swirl`):** Tangential inlet ports create a rotating liquid film with a hollow central gas core, enveloped in an annular gas stream (e.g. RD-170, RD-180, NK-33).
+3. **Central Pintle Injectors (`pintle`):** Continuous annular sheet deflected outward by an impinging central radial spray, providing wide throttling margins (e.g. Apollo LMDE, SpaceX Merlin 1D).
+4. **Unlike Impinging Doublet Injectors (`impinging`):** Discrete intersecting liquid jets forming an atomizing spray fan (e.g. Apollo SPS, Titan II, Viking).
 
 ---
 
@@ -47,6 +59,7 @@ Given high-level preliminary requirements (**Thrust, Chamber Pressure, Mixture R
 | **Mechanical Wall Thickness** | Thin-shell hoop stress: $t_w = \frac{P_c R_c}{\sigma_{allow}}$ | ASME Section VIII Div 1 | Minimum & recommended wall thickness $t_w$ |
 | **Injector Hydraulics & Decoupling** | Orifice flow $A_o = \frac{\dot{m}}{C_d\sqrt{2\rho\Delta P}}$, Stiffness $\frac{\Delta P}{P_c} \ge 0.15$ | NASA SP-194 / Huzel & Huang | Manifold $\Delta P$, orifice areas, velocities, chugging status |
 | **Shear Coaxial Injectors** | Momentum flux ratio $J = \frac{\rho_g V_g^2}{\rho_l V_l^2}$, Lorenzetto-Lefebvre SMD | Yang et al. (2004) / Lefebvre | Post ID/OD, annulus gap, $J$, velocity ratio $VR$, $R_L$, droplet SMD $D_{32}$ |
+| **Centrifugal Swirl Injectors** | Geometric swirl $K = \frac{\pi R_{in} r_o}{n A_p}$, Lefebvre (1989) sheet atomization | Bazarov & Yang (1998) / Lefebvre | Centrifugal orifice, gas core, film thickness, spray angle, SMD $D_{32}$ |
 | **Pintle Injectors** | Total Momentum Ratio: $TMR = \frac{\dot{m}_{rad} V_{rad}}{\dot{m}_{ann} V_{ann}}$, $\beta = \arccos\left(\frac{1}{1+TMR}\right)$ | Dressler (2000) / Heister (2019) | Pintle diameter, radial slot height, gap thickness, $TMR$, cone angle $\beta$ |
 | **Unlike Impinging Doublets** | Rupe momentum balance: $\frac{\rho_1 v_1^2 d_1}{\rho_2 v_2^2 d_2} = 1$, Ingebo atomization | Rupe (1956) JPL / Ingebo (1958) | Orifice diameters, jet velocities, free jet length, droplet SMD $D_{32}$ |
 
@@ -137,15 +150,21 @@ navronis --subsystem chamber --thrust 30000 --pc 120 --propellants LOX/CH4
 # 2. Size a 19-element shear coaxial injector head
 navronis --subsystem injector --injector-type coaxial --thrust 30000 --pc 120 --propellants LOX/CH4
 
-# 3. Size a throttleable central pintle injector
+# 3. Size a 19-element centrifugal swirl coaxial injector head
+navronis --subsystem injector --injector-type swirl --thrust 30000 --pc 120 --propellants LOX/CH4
+
+# 4. Size a throttleable central pintle injector
 navronis --subsystem injector --injector-type pintle --thrust 30000 --pc 120 --propellants LOX/CH4
+
+# 5. Size a 16-element unlike impinging doublet injector
+navronis --subsystem injector --injector-type impinging --thrust 30000 --pc 120 --propellants LOX/CH4
 ```
 
 ### Example Terminal Output: Injector Sizing (`--subsystem injector`)
 
 ```text
 ==============================================================================
-NAVRONIS PROPULSION — INJECTOR SIZING REPORT: COAXIAL
+NAVRONIS PROPULSION -- INJECTOR SIZING REPORT: COAXIAL
 Propellant: LOX/CH4 | Thrust: 30.0 kN | Pc: 120.0 bar
 ==============================================================================
 Mass Flow: Total = 10.370 kg/s (LOX: 8.066 kg/s, Fuel: 2.304 kg/s)
@@ -282,6 +301,7 @@ All formulations cite their original peer-reviewed or technical monograph source
 - **Hot-Gas Convective Heat Transfer:** Bartz, D. R. (1957), *A Simple Equation for Rapid Estimation of Rocket Nozzle Convective Heat Transfer Coefficients*, Jet Propulsion 27(1).
 - **Chamber Acoustic Instability & Chugging:** Harrje & Reardon (Eds.), *Liquid Propellant Rocket Combustion Instability* (NASA SP-194).
 - **Shear Coaxial Injectors & Atomization:** Yang, V. et al. (2004), *Liquid Rocket Thrust Chambers: Aspects of Modeling, Analysis, and Design*; Lorenzetto & Lefebvre (1977), *Measurements of Drop Size on Atomization by High-Velocity Gas Rays*.
+- **Swirl Coaxial Injectors & Sheet Breakup:** Bazarov, V. G. & Yang, V. (1998), *Liquid-Propellant Rocket Engine Injectors*, AIAA J. Prop. & Power 14(5); Lefebvre, A. H. (1989), *Atomization and Sprays*, Hemisphere Publishing.
 - **Pintle Injector Mechanics:** Dressler, G. A. (2000), *Summary of Deep Throttling Rocket Engines*, AIAA-2000-3873; Heister et al. (2019), *Rocket Propulsion*, Cambridge University Press.
 - **Impinging Jet Atomization:** Rupe, J. H. (1956), *A Correlation Between Orifice Geometry and Mixing Performance of Impinging Streams*, JPL Report No. 20-80; Ingebo, R. D. (1958), *Drop-Size Distributions for Impinging-Jet Breakup in Airstreams*, NACA TN 4222.
 - **Structural Hoop Stress:** ASME Boiler and Pressure Vessel Code, Section VIII, Division 1.

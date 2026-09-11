@@ -296,6 +296,17 @@ def run_injector_sizing(
         print(f"Velocity Ratio VR:         {res['velocity_ratio_VR']:.2f}")
         print(f"Recess Length:             {res['recess_length_mm']:.2f} mm")
         print(f"Droplet SMD (D32):         {res['smd_um']:.1f} um")
+    elif injector_type in {"swirl", "swirl_coaxial"}:
+        print(f"Elements:                  {res['n_elements']}")
+        print(f"Centrifugal Orifice Diam:  {res['orifice_diameter_mm']:.2f} mm")
+        print(f"Central Gas Core Diam:     {res['gas_core_diameter_mm']:.2f} mm")
+        print(f"Liquid Film Thickness:     {res['liquid_film_thickness_mm']:.3f} mm")
+        print(f"Spray Cone Half-Angle:     {res['spray_half_angle_deg']:.1f} deg")
+        print(f"Tangential Inlet Diam:     {res['tangential_inlet_diameter_mm']:.2f} mm")
+        print(f"Coaxial Gas Annulus Gap:   {res['annular_gas_gap_mm']:.2f} mm")
+        print(f"Gas Velocity:              {res['gas_velocity_m_s']:.2f} m/s")
+        print(f"Geometric Swirl K:         {res['geometric_swirl_K']:.2f}")
+        print(f"Droplet SMD (D32):         {res['smd_um']:.1f} um")
     elif injector_type in {"pintle", "pintle_injector"}:
         print(f"Pintle Diameter:           {res['pintle_diameter_mm']:.1f} mm")
         print(f"Annular Gap Thickness:     {res['annular_gap_thickness_mm']:.3f} mm")
@@ -325,11 +336,11 @@ def main() -> None:
     )
     parser.add_argument(
         "--subsystem", default="chamber", choices=["chamber", "injector"],
-        help="Subsystem to size: 'chamber' (Day 1) or 'injector' (Day 2)",
+        help="Subsystem to size: 'chamber' or 'injector'",
     )
     parser.add_argument(
-        "--injector-type", default="coaxial", choices=["coaxial", "pintle", "impinging"],
-        help="Injector family: 'coaxial', 'pintle', or 'impinging' (for --subsystem injector)",
+        "--injector-type", default="coaxial", choices=["coaxial", "swirl", "pintle", "impinging"],
+        help="4 Canonical injector families: 'coaxial', 'swirl', 'pintle', or 'impinging' (for --subsystem injector)",
     )
     parser.add_argument(
         "--elements", type=int, default=19,

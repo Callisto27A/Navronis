@@ -1,13 +1,14 @@
 """
-Kryptonis Propulsion: Injector Head & Atomization Analytical Sizing Engine (Day 2 Release)
-========================================================================================
-Provides closed-form, literature-sourced analytical sizing and atomization models for:
-1. Shear Coaxial Elements (LOX/CH4, LOX/LH2 - NASA SP-125, Yang 2004)
-2. Pintle Injector Elements (Apollo LMDE, Merlin, Starship - Dressler 2000, Heister 2019)
-3. Impinging Jet Doublets/Triplets (Like-on-like, Unlike F-O-F - Rupe 1956, Ingebo 1958)
-4. Orifice Hydraulics & Chugging Decoupling (NASA SP-194)
+Navronis Propulsion: Injector Head & Atomization Analytical Sizing Engine
+========================================================================
+Focuses strictly on the 4 canonical liquid rocket engine injector families:
+1. Shear Coaxial Injectors (SSME, RL10, Vulcain, Raptor - NASA SP-125, Yang 2004)
+2. Swirl Coaxial Injectors (RD-170, RD-180, NK-33 - Bazarov & Yang 1998, Lefebvre 1989)
+3. Pintle Injectors (Apollo LMDE, Merlin 1D, TRW TR-106 - Dressler 2000, Heister 2019)
+4. Unlike Impinging Doublets (Apollo SPS, Titan, Viking - Rupe 1956, Ingebo 1958)
 
-All formulations include strict SI units, sanity validation, and explicit literature citations.
+Includes base orifice hydraulics and NASA SP-194 chugging decoupling stability criterion.
+All formulations feature strict SI units, sanity validation, and explicit literature citations.
 """
 
 from __future__ import annotations
@@ -27,6 +28,8 @@ CITATIONS = {
     "coaxial_atomization": "Lorenzetto, P. R. & Lefebvre, A. H. (1977), Measurements of Drop Size on Coaxial Airblast Atomizers, AIAA J.",
     "pintle_tmr": "Dressler, G. A. & Bauer, J. M. (2000), TRW Pintle Engine Heritage and Performance, AIAA-2000-3871",
     "pintle_spray_angle": "Heister, S. D. et al. (2019), Rocket Propulsion, Cambridge University Press, Ch. 6",
+    "swirl_coaxial": "Bazarov, V. G. & Yang, V. (1998), Liquid-Propellant Rocket Engine Injectors, AIAA J. Prop. & Power, 14(5)",
+    "swirl_atomization": "Lefebvre, A. H. (1989), Atomization and Sprays, Hemisphere Publishing, Eq. (6.33) p. 215",
     "rupe_mixing": "Rupe, J. H. (1956), The Liquid Phase Mixing of a Pair of Impinging Streams, JPL Report No. 20-195",
     "ingebo_smd": "Ingebo, R. D. (1958), Drop-Size Distributions for Impinging Jet Atomizers, NACA TN-4222",
 }
@@ -175,7 +178,98 @@ def size_shear_coaxial(
 
 
 # --------------------------------------------------------------------------
-# 3. Pintle Injector Sizing (Merlin, Starship, Apollo LMDE Style)
+# 3. Swirl Coaxial Injector Sizing (RD-170, RD-180, NK-33 Style)
+# --------------------------------------------------------------------------
+
+def size_swirl_coaxial(
+    m_dot_liquid: float,
+    m_dot_gas: float,
+    rho_liquid: float,
+    rho_gas: float,
+    delta_p_liquid: float,
+    delta_p_gas: float,
+    n_elements: int = 19,
+    geometric_swirl_k: float = 3.0,
+    n_tangential_inlets: int = 3,
+    post_wall_thickness: float = 0.0008,
+    surface_tension_liquid: float = 0.013,
+    viscosity_liquid: float = 1.9e-4,
+) -> Dict[str, Any]:
+    """Size centrifugal pressure-swirl coaxial elements with hollow conical liquid sheet.
+    
+    Literature Source:
+    - Bazarov & Yang (1998), Liquid-Propellant Rocket Engine Injectors, AIAA
+    - Lefebvre (1989), Atomization and Sprays, Eq. (6.33)
+    """
+    if n_elements <= 0:
+        raise ValueError("Number of elements must be >= 1")
+    if geometric_swirl_k <= 0.5:
+        raise ValueError("Geometric swirl characteristic K must be > 0.5")
+
+    m_liq_elem = m_dot_liquid / n_elements
+    m_gas_elem = m_dot_gas / n_elements
+
+    # Discharge coefficient Cd via Abramovich/Bazarov swirl theory
+    cd_swirl = 0.35 / (geometric_swirl_k ** 0.35)
+
+    # Orifice throat area and diameter
+    a_orifice = orifice_area(m_liq_elem, cd_swirl, rho_liquid, delta_p_liquid)
+    d_orifice = orifice_diameter(a_orifice)
+
+    # Coefficient of nozzle filling phi (gas core ratio)
+    phi = 1.0 / (1.0 + 0.35 * geometric_swirl_k)
+    d_core = d_orifice * math.sqrt(max(1.0 - phi, 0.01))
+    film_thickness = 0.5 * (d_orifice - d_core)
+
+    # Spray half-cone angle: tan(theta) = 0.45 * K
+    tan_theta = 0.45 * geometric_swirl_k
+    spray_half_angle_deg = math.degrees(math.atan(tan_theta))
+
+    # Tangential inlet port sizing
+    a_inlet_total = a_orifice / (cd_swirl * math.sqrt(2.0))
+    d_inlet_port = math.sqrt(4.0 * (a_inlet_total / n_tangential_inlets) / math.pi)
+
+    # Coaxial gas annulus sizing
+    cd_gas = 0.82
+    a_gas = orifice_area(m_gas_elem, cd_gas, rho_gas, delta_p_gas)
+    d_post_od = d_orifice + 2.0 * post_wall_thickness
+    d_gas_sleeve_id = math.sqrt(d_post_od**2 + (4.0 * a_gas / math.pi))
+    annular_gas_gap = 0.5 * (d_gas_sleeve_id - d_post_od)
+
+    v_gas = m_gas_elem / (rho_gas * a_gas)
+    v_liq_axial = m_liq_elem / (rho_liquid * a_orifice * phi)
+
+    # Sauter Mean Diameter (SMD D32) via Lefebvre (1989) Eq. (6.33)
+    sigma = surface_tension_liquid
+    mu_l = viscosity_liquid
+    t_f = max(film_thickness, 1e-6)
+    term1 = 4.52 * (((sigma * (mu_l**2)) / (rho_gas * (delta_p_liquid**2)))**0.25) * (t_f**0.25)
+    term2 = 0.39 * (((sigma * rho_liquid) / (rho_gas * delta_p_liquid))**0.25) * (t_f**0.75)
+    smd_m = term1 + term2
+    smd_um = smd_m * 1.0e6
+
+    return {
+        "n_elements": n_elements,
+        "orifice_diameter_mm": d_orifice * 1e3,
+        "gas_core_diameter_mm": d_core * 1e3,
+        "liquid_film_thickness_mm": film_thickness * 1e3,
+        "spray_half_angle_deg": spray_half_angle_deg,
+        "tangential_inlet_diameter_mm": d_inlet_port * 1e3,
+        "gas_sleeve_id_mm": d_gas_sleeve_id * 1e3,
+        "annular_gas_gap_mm": annular_gas_gap * 1e3,
+        "gas_velocity_m_s": v_gas,
+        "liquid_axial_velocity_m_s": v_liq_axial,
+        "geometric_swirl_K": geometric_swirl_k,
+        "smd_um": smd_um,
+        "provenance": {
+            "swirl_mechanics": CITATIONS["swirl_coaxial"],
+            "atomization": CITATIONS["swirl_atomization"],
+        }
+    }
+
+
+# --------------------------------------------------------------------------
+# 4. Pintle Injector Sizing (Merlin, Starship, Apollo LMDE Style)
 # --------------------------------------------------------------------------
 
 def size_pintle_injector(
@@ -396,6 +490,16 @@ class InjectorDesign:
                 cd_fuel=self.cd_fuel,
                 n_elements=self.n_elements,
             )
+        elif t_type in {"swirl", "swirl_coaxial", "centrifugal"}:
+            res = size_swirl_coaxial(
+                m_dot_liquid=self.mass_flow_ox,
+                m_dot_gas=self.mass_flow_fuel,
+                rho_liquid=self.rho_ox,
+                rho_gas=self.rho_fuel,
+                delta_p_liquid=delta_p_ox,
+                delta_p_gas=delta_p_fuel,
+                n_elements=self.n_elements,
+            )
         elif t_type in {"pintle", "pintle_injector"}:
             # Standard arrangement: Fuel annular (outer), Oxidizer radial (inner)
             res = size_pintle_injector(
@@ -423,7 +527,10 @@ class InjectorDesign:
                 cd_2=self.cd_fuel,
             )
         else:
-            raise ValueError(f"Unsupported injector_type: {self.injector_type}. Choose 'coaxial', 'pintle', or 'impinging'.")
+            raise ValueError(
+                f"Unsupported injector_type '{self.injector_type}'. "
+                "Choose from the 4 canonical types: 'coaxial', 'swirl', 'pintle', or 'impinging'."
+            )
 
         res["injector_type"] = t_type
         res["chamber_pressure_bar"] = self.chamber_pressure / 1e5

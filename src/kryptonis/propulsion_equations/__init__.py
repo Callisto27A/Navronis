@@ -104,6 +104,7 @@ from kryptonis.propulsion_equations.injector import (
     orifice_velocity,
     injector_pressure_drop_stiffness,
     size_shear_coaxial,
+    size_swirl_coaxial,
     size_pintle_injector,
     size_impinging_doublet,
     InjectorDesign,
@@ -137,11 +138,11 @@ __all__ = [
     "divergence_efficiency", "separation_assessment", "delivered_thrust_coefficient",
     # Acoustics
     "first_tangential_frequency", "first_radial_frequency", "first_longitudinal_frequency",
-    # High-level Combustor API (Day 1 Release)
+    # High-level Combustor API
     "CombustorDesign", "CombustorResult",
-    # High-level Injector API (Day 2 Release)
+    # 4 Canonical Injector Families API
     "orifice_area", "orifice_diameter", "orifice_velocity",
     "injector_pressure_drop_stiffness", "size_shear_coaxial",
-    "size_pintle_injector", "size_impinging_doublet",
+    "size_swirl_coaxial", "size_pintle_injector", "size_impinging_doublet",
     "InjectorDesign", "ShearCoaxialElement",
 ]

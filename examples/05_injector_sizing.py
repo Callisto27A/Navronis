@@ -1,17 +1,19 @@
 """
-Navronis Propulsion — Example 05: Injector Head & Atomization Elements (Day 2)
-=============================================================================
+Navronis Propulsion — Example 05: 4 Canonical Injector Families Sizing Benchmark
+================================================================================
 Demonstrates preliminary sizing and atomization analysis of a 30 kN Methalox
-rocket engine across three canonical injector architectures:
-1. Multi-element Shear Coaxial Injector (19 elements)
-2. Central Pintle Injector (Apollo / Merlin / Starship style)
-3. Unlike Impinging Doublet Injector (16 elements)
+rocket engine across the 4 canonical rocket injector architectures:
+1. Multi-element Shear Coaxial Injector (19 elements - SSME / Raptor style)
+2. Centrifugal Swirl Coaxial Injector (19 elements - RD-170 / NK-33 style)
+3. Central Pintle Injector (Single central assembly - Apollo / Merlin style)
+4. Unlike Impinging Doublet Injector (16 elements - Hypergolic / Apollo SPS style)
 
 Runs instantaneously with zero heavy CFD or CAD dependencies.
 """
 
 from kryptonis.propulsion_equations.injector import (
     size_shear_coaxial,
+    size_swirl_coaxial,
     size_pintle_injector,
     size_impinging_doublet,
     InjectorDesign,
@@ -20,7 +22,7 @@ from kryptonis.propulsion_equations.injector import (
 
 def main():
     print("=" * 78)
-    print("NAVRONIS PROPULSION -- COMPONENT 2: INJECTOR HEAD SIZING BENCHMARK")
+    print("NAVRONIS PROPULSION -- 4 CANONICAL INJECTOR FAMILIES BENCHMARK")
     print("Engine: 30 kN LOX/Methane (Chamber Pressure: 30 bar / 3.0 MPa)")
     print("=" * 78)
 
@@ -42,7 +44,7 @@ def main():
     # --------------------------------------------------------------------------
     # 1. Multi-Element Shear Coaxial Injector (19 Elements)
     # --------------------------------------------------------------------------
-    print("[-] 1. SIZING SHEAR COAXIAL INJECTOR HEAD (19 Elements)...")
+    print("[-] 1. SIZING SHEAR COAXIAL INJECTOR (19 Elements - SSME/Raptor Style)...")
     coax = InjectorDesign(
         injector_type="coaxial",
         chamber_pressure=pc_pa,
@@ -68,9 +70,34 @@ def main():
     print(f"    Chugging Stiffness:      {'ADEQUATE (20% Pc)' if coax['chugging_margin_adequate'] else 'WARNING'}")
 
     # --------------------------------------------------------------------------
-    # 2. Central Pintle Injector (Apollo / Merlin Style)
+    # 2. Centrifugal Swirl Coaxial Injector (19 Elements)
     # --------------------------------------------------------------------------
-    print("\n[-] 2. SIZING CENTRAL PINTLE INJECTOR (Single Central Assembly)...")
+    print("\n[-] 2. SIZING SWIRL COAXIAL INJECTOR (19 Elements - RD-170/NK-33 Style)...")
+    swirl = InjectorDesign(
+        injector_type="swirl",
+        chamber_pressure=pc_pa,
+        mass_flow_ox=m_ox,
+        mass_flow_fuel=m_fuel,
+        rho_ox=rho_ox,
+        rho_fuel=rho_fuel,
+        delta_p_ratio=0.20,
+        n_elements=19,
+    ).solve()
+
+    print(f"    Elements:                {swirl['n_elements']}")
+    print(f"    Centrifugal Orifice:     {swirl['orifice_diameter_mm']:.2f} mm")
+    print(f"    Central Gas Core Diam:   {swirl['gas_core_diameter_mm']:.2f} mm")
+    print(f"    Liquid Film Thickness:   {swirl['liquid_film_thickness_mm']:.3f} mm")
+    print(f"    Spray Cone Half-Angle:   {swirl['spray_half_angle_deg']:.1f} deg")
+    print(f"    Tangential Inlet Diam:   {swirl['tangential_inlet_diameter_mm']:.2f} mm")
+    print(f"    Coaxial Gas Annulus Gap: {swirl['annular_gas_gap_mm']:.2f} mm")
+    print(f"    Geometric Swirl K:       {swirl['geometric_swirl_K']:.2f}")
+    print(f"    Droplet SMD (D32):       {swirl['smd_um']:.1f} um (Lefebvre)")
+
+    # --------------------------------------------------------------------------
+    # 3. Central Pintle Injector (Apollo / Merlin Style)
+    # --------------------------------------------------------------------------
+    print("\n[-] 3. SIZING CENTRAL PINTLE INJECTOR (Single Central Assembly - Merlin Style)...")
     pintle = InjectorDesign(
         injector_type="pintle",
         chamber_pressure=pc_pa,
@@ -91,9 +118,9 @@ def main():
     print(f"    Spray Cone Half-Angle:   {pintle['spray_half_angle_deg']:.1f} deg")
 
     # --------------------------------------------------------------------------
-    # 3. Unlike Impinging Doublets (16 Elements)
+    # 4. Unlike Impinging Doublets (16 Elements)
     # --------------------------------------------------------------------------
-    print("\n[-] 3. SIZING UNLIKE IMPINGING DOUBLET INJECTOR HEAD (16 Elements)...")
+    print("\n[-] 4. SIZING UNLIKE IMPINGING DOUBLETS (16 Elements - Hypergolic/SPS Style)...")
     imp = InjectorDesign(
         injector_type="impinging",
         chamber_pressure=pc_pa,
@@ -116,7 +143,7 @@ def main():
     print(f"    Droplet SMD (D32):       {imp['smd_um']:.1f} um")
 
     print("\n" + "=" * 78)
-    print("INJECTOR SIZING BENCHMARK COMPLETE -- ALL MODELS VERIFIED WITH LITERATURE CITATIONS")
+    print("4 CANONICAL INJECTOR FAMILIES VERIFIED WITH LITERATURE CITATIONS")
     print("=" * 78)
 
 

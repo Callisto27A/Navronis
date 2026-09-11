@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] — 2026-09-11 (Injector Head & Atomization Elements)
 
 ### Added
-- **`InjectorDesign` Facade API:** Unified multi-architecture entry point supporting shear coaxial, pintle, and impinging doublet configurations with strict validation.
+- **`InjectorDesign` Facade API:** Unified entry point strictly scoped to the 4 canonical rocket injector families (`coaxial`, `swirl`, `pintle`, and `impinging`).
 - **Hydraulic Orifice Sizing & Chugging Decoupling:**
   - Standard incompressible orifice discharge equation ($A_o = \dot{m} / (C_d \sqrt{2 \rho \Delta P})$)
   - NASA SP-194 low-frequency chugging acoustic stability criterion ($\Delta P / P_c \ge 15\% - 25\%$)
@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Momentum flux ratio ($J = \frac{\rho_g V_g^2}{\rho_l V_l^2}$) screening against the stable combustion window ($2 \le J \le 20$)
   - Lorenzetto & Lefebvre (1977) Sauter Mean Diameter (SMD $D_{32}$) droplet atomization model
   - Recess ratio ($R_L$) calculation for internal mixing and flame anchoring
+- **Centrifugal Swirl Coaxial Injector Elements (Bazarov & Yang 1998, Lefebvre 1989):**
+  - Abramovich centrifugal swirl discharge coefficient ($C_d$) from geometric swirl characteristic ($K = \frac{\pi R_{in} r_o}{n A_p}$)
+  - Internal hollow gas/air core diameter and annular liquid sheet film thickness
+  - Conical spray half-angle ($\theta$) and Lefebvre pressure-swirl droplet SMD ($D_{32}$)
+  - Coaxial gas sleeve gap sizing and gas velocity
 - **Pintle Injector Elements (Dressler 2000, Heister 2019):**
   - Total Momentum Ratio ($TMR = \frac{\dot{m}_{rad} V_{rad}}{\dot{m}_{ann} V_{ann}}$)
   - Resultant spray cone half-angle ($\beta = \arccos\left(\frac{1}{1 + TMR}\right)$)
@@ -27,9 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Rupe momentum ratio balance for uniform mixture ratio distribution
   - Free jet length before impingement ($L_{jet} = d_o / \tan(\theta/2)$)
   - Ingebo high-velocity liquid jet breakup droplet SMD ($D_{32}$)
-- **CLI Extension:** `navronis --subsystem injector` with `--injector-type`, `--elements`, and `--delta-p-ratio` flags.
-- **Automated Verification:** 6 new pytest unit tests (26 total unit tests passing in under 1.5s).
-- **Comprehensive Sizing Example:** `examples/05_injector_sizing.py` demonstrating coaxial, pintle, and impinging doublet sizing for a 30 kN Methalox engine.
+- **CLI Extension:** `navronis --subsystem injector` with `--injector-type [coaxial|swirl|pintle|impinging]`, `--elements`, and `--delta-p-ratio` flags.
+- **Automated Verification:** 7 new pytest unit tests (27 total unit tests passing in under 2s).
+- **Comprehensive Sizing Benchmark:** `examples/05_injector_sizing.py` sizing a 30 kN Methalox engine across all 4 canonical architectures.
 
 ---
 

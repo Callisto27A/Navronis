@@ -14,6 +14,7 @@ from kryptonis.propulsion_equations.injector import (
     orifice_velocity,
     injector_pressure_drop_stiffness,
     size_shear_coaxial,
+    size_swirl_coaxial,
     size_pintle_injector,
     size_impinging_doublet,
     InjectorDesign,
@@ -104,6 +105,36 @@ def test_shear_coaxial_sizing():
     assert "Lefebvre" in res["provenance"]["atomization"]
 
 
+def test_swirl_coaxial_sizing():
+    """Verify RD-170/NK-33 centrifugal swirl coaxial injector sizing."""
+    m_dot_ox = 8.167
+    m_dot_fuel = 2.333
+    rho_ox = 1141.0
+    rho_fuel = 422.0
+    dp = 6.0e5
+
+    res = size_swirl_coaxial(
+        m_dot_liquid=m_dot_ox,
+        m_dot_gas=m_dot_fuel,
+        rho_liquid=rho_ox,
+        rho_gas=rho_fuel,
+        delta_p_liquid=dp,
+        delta_p_gas=dp,
+        n_elements=19,
+        geometric_swirl_k=3.0,
+    )
+
+    assert res["n_elements"] == 19
+    assert res["orifice_diameter_mm"] > 1.0
+    assert res["gas_core_diameter_mm"] > 0.5
+    assert res["liquid_film_thickness_mm"] > 0.05
+    assert 20.0 < res["spray_half_angle_deg"] < 80.0
+    assert res["geometric_swirl_K"] == 3.0
+    assert 5.0 < res["smd_um"] < 150.0
+    assert "Bazarov" in res["provenance"]["swirl_mechanics"]
+    assert "Lefebvre" in res["provenance"]["atomization"]
+
+
 def test_pintle_injector_sizing():
     """Verify Apollo/Merlin style central pintle injector sizing."""
     m_dot_fuel_ann = 2.333  # kg/s annular fuel
@@ -178,6 +209,21 @@ def test_injector_design_facade():
     assert coax["injector_type"] == "coaxial"
     assert coax["chugging_margin_adequate"] is True
     assert coax["delta_p_bar"] == pytest.approx(6.0)
+
+    # Swirl
+    swirl = InjectorDesign(
+        injector_type="swirl",
+        chamber_pressure=30.0e5,
+        mass_flow_ox=8.0,
+        mass_flow_fuel=2.5,
+        rho_ox=1141.0,
+        rho_fuel=422.0,
+        delta_p_ratio=0.20,
+        n_elements=19,
+    ).solve()
+    assert swirl["injector_type"] == "swirl"
+    assert swirl["geometric_swirl_K"] == 3.0
+    assert swirl["spray_half_angle_deg"] > 30.0
 
     # Pintle
     pintle = InjectorDesign(
