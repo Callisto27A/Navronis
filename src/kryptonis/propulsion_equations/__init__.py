@@ -98,7 +98,19 @@ from kryptonis.propulsion_equations.combustor import (
     CombustorResult,
 )
 
-__version__ = "0.1.0"
+from kryptonis.propulsion_equations.injector import (
+    orifice_area,
+    orifice_diameter,
+    orifice_velocity,
+    injector_pressure_drop_stiffness,
+    size_shear_coaxial,
+    size_pintle_injector,
+    size_impinging_doublet,
+    InjectorDesign,
+    ShearCoaxialElement,
+)
+
+__version__ = "0.2.0"
 __all__ = [
     # Units & result containers
     "Result", "Status", "EvidenceLevel", "Verification", "Validation", "Assumption",
@@ -127,4 +139,9 @@ __all__ = [
     "first_tangential_frequency", "first_radial_frequency", "first_longitudinal_frequency",
     # High-level Combustor API (Day 1 Release)
     "CombustorDesign", "CombustorResult",
+    # High-level Injector API (Day 2 Release)
+    "orifice_area", "orifice_diameter", "orifice_velocity",
+    "injector_pressure_drop_stiffness", "size_shear_coaxial",
+    "size_pintle_injector", "size_impinging_doublet",
+    "InjectorDesign", "ShearCoaxialElement",
 ]

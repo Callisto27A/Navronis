@@ -237,10 +237,107 @@ def run_chamber_sizing(
     return 0
 
 
+def run_injector_sizing(
+    thrust_n: float,
+    pc_bar: float,
+    propellants: str = "LOX/CH4",
+    injector_type: str = "coaxial",
+    n_elements: int = 19,
+    delta_p_ratio: float = 0.20,
+) -> int:
+    from kryptonis.propulsion_equations.injector import InjectorDesign
+
+    pc_pa = pc_bar * 1e5
+    # Standard propellant properties (density kg/m³, typical Isp sea-level s, nominal O/F)
+    prop_table = {
+        "LOX/CH4": {"rho_ox": 1141.0, "rho_f": 422.0, "isp": 295.0, "of": 3.5},
+        "LOX/RP-1": {"rho_ox": 1141.0, "rho_f": 810.0, "isp": 285.0, "of": 2.6},
+        "LOX/LH2": {"rho_ox": 1141.0, "rho_f": 71.0, "isp": 390.0, "of": 6.0},
+    }
+    norm = propellants.upper().replace("METHANE", "CH4").replace("KEROSENE", "RP-1")
+    pinfo = prop_table.get(norm, prop_table["LOX/CH4"])
+
+    # Mass flow estimate: m_dot = Thrust / (Isp * 9.80665)
+    m_dot_total = thrust_n / (pinfo["isp"] * 9.80665)
+    of = pinfo["of"]
+    m_dot_fuel = m_dot_total / (1.0 + of)
+    m_dot_ox = m_dot_total - m_dot_fuel
+
+    des = InjectorDesign(
+        injector_type=injector_type,
+        chamber_pressure=pc_pa,
+        mass_flow_ox=m_dot_ox,
+        mass_flow_fuel=m_dot_fuel,
+        rho_ox=pinfo["rho_ox"],
+        rho_fuel=pinfo["rho_f"],
+        delta_p_ratio=delta_p_ratio,
+        n_elements=n_elements,
+    )
+    res = des.solve()
+
+    print("=" * 78)
+    print(f"NAVRONIS PROPULSION -- INJECTOR SIZING REPORT: {injector_type.upper()}")
+    print(f"Propellant: {propellants} | Thrust: {thrust_n/1e3:.1f} kN | Pc: {pc_bar:.1f} bar")
+    print("=" * 78)
+    print(f"Mass Flow: Total = {m_dot_total:.3f} kg/s (LOX: {m_dot_ox:.3f} kg/s, Fuel: {m_dot_fuel:.3f} kg/s)")
+    print(f"Injector Delta P: {res['delta_p_bar']:.2f} bar ({res['delta_p_ratio']*100:.1f}% Pc)")
+    print(f"Chugging Decoupling Margin: {'PASS (>=15%)' if res['chugging_margin_adequate'] else 'FAIL (<15%)'}")
+    print("-" * 78)
+
+    if injector_type in {"coaxial", "shear_coaxial"}:
+        print(f"Elements:                  {res['n_elements']}")
+        print(f"Liquid Post ID:            {res['post_id_mm']:.2f} mm")
+        print(f"Liquid Post OD:            {res['post_od_mm']:.2f} mm")
+        print(f"Gas Sleeve ID:             {res['annulus_id_mm']:.2f} mm")
+        print(f"Annular Gap:               {res['annular_gap_mm']:.2f} mm")
+        print(f"Liquid Ox Velocity:        {res['v_ox_m_s']:.2f} m/s")
+        print(f"Gas/Fuel Velocity:         {res['v_fuel_m_s']:.2f} m/s")
+        print(f"Momentum Flux Ratio J:     {res['momentum_flux_ratio_J']:.2f}  [Target: 2.0 - 20.0]")
+        print(f"Velocity Ratio VR:         {res['velocity_ratio_VR']:.2f}")
+        print(f"Recess Length:             {res['recess_length_mm']:.2f} mm")
+        print(f"Droplet SMD (D32):         {res['smd_um']:.1f} um")
+    elif injector_type in {"pintle", "pintle_injector"}:
+        print(f"Pintle Diameter:           {res['pintle_diameter_mm']:.1f} mm")
+        print(f"Annular Gap Thickness:     {res['annular_gap_thickness_mm']:.3f} mm")
+        print(f"Annular Fuel Velocity:     {res['annular_velocity_m_s']:.2f} m/s")
+        print(f"Radial Slot Height:        {res['radial_slot_height_mm']:.3f} mm")
+        print(f"Radial Ox Velocity:        {res['radial_velocity_m_s']:.2f} m/s")
+        print(f"Total Momentum Ratio TMR:  {res['total_momentum_ratio_TMR']:.3f}")
+        print(f"Spray Cone Half-Angle:     {res['spray_half_angle_deg']:.1f} deg")
+    else:
+        print(f"Elements:                  {res['n_elements']}")
+        print(f"Oxidizer Orifice Diam:     {res['orifice_diameter_1_mm']:.2f} mm")
+        print(f"Fuel Orifice Diam:         {res['orifice_diameter_2_mm']:.2f} mm")
+        print(f"Oxidizer Jet Velocity:     {res['jet_velocity_1_m_s']:.2f} m/s")
+        print(f"Fuel Jet Velocity:         {res['jet_velocity_2_m_s']:.2f} m/s")
+        print(f"Rupe Momentum Parameter:   {res['rupe_momentum_parameter']:.2f}")
+        print(f"Free Jet Length:           {res['free_jet_length_mm']:.2f} mm")
+        print(f"Droplet SMD (D32):         {res['smd_um']:.1f} um")
+
+    print("=" * 78)
+    return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        prog="kryptonis-chamber",
-        description="Authority-controlled analytical sizing for liquid rocket engine thrust chambers.",
+        prog="navronis",
+        description="Authority-controlled analytical sizing for liquid rocket engine thrust chambers and injectors.",
+    )
+    parser.add_argument(
+        "--subsystem", default="chamber", choices=["chamber", "injector"],
+        help="Subsystem to size: 'chamber' (Day 1) or 'injector' (Day 2)",
+    )
+    parser.add_argument(
+        "--injector-type", default="coaxial", choices=["coaxial", "pintle", "impinging"],
+        help="Injector family: 'coaxial', 'pintle', or 'impinging' (for --subsystem injector)",
+    )
+    parser.add_argument(
+        "--elements", type=int, default=19,
+        help="Number of injector elements (default: 19)",
+    )
+    parser.add_argument(
+        "--delta-p-ratio", type=float, default=0.20,
+        help="Injector pressure drop ratio delta_p / Pc (default: 0.20 = 20%)",
     )
     parser.add_argument(
         "--thrust", "-t", type=float, default=30000.0,
@@ -303,6 +400,18 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+
+    if args.subsystem == "injector":
+        sys.exit(
+            run_injector_sizing(
+                thrust_n=args.thrust,
+                pc_bar=args.pc,
+                propellants=args.propellants,
+                injector_type=args.injector_type,
+                n_elements=args.elements,
+                delta_p_ratio=args.delta_p_ratio,
+            )
+        )
 
     sys.exit(
         run_chamber_sizing(

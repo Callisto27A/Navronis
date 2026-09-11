@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kryptonis-propulsion-equations"
-version = "0.1.0"
-description = "Authority-controlled analytical equations for liquid rocket propulsion, thrust chamber sizing, Bartz heat transfer, regenerative cooling, and nozzle gas dynamics."
+version = "0.2.0"
+description = "Authority-controlled analytical equations for liquid rocket propulsion, thrust chamber sizing, injector head & atomization, Bartz heat transfer, regenerative cooling, and nozzle gas dynamics."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
@@ -14,6 +14,8 @@ authors = [
 ]
 keywords = [
     "rocket-propulsion",
+    "injector-design",
+    "atomization",
     "bartz-equation",
     "regenerative-cooling",
     "thrust-chamber",
@@ -41,6 +43,7 @@ dependencies = [
 
 [project.scripts]
 kryptonis-chamber = "kryptonis.propulsion_equations.cli:main"
+navronis = "kryptonis.propulsion_equations.cli:main"
 
 [project.optional-dependencies]
 test = [

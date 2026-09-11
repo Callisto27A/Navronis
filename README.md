@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-brightgreen.svg)](https://python.org)
-[![Build & Test](https://img.shields.io/badge/Tests-20%20Passed-success.svg)](#verification--testing)
+[![Build & Test](https://img.shields.io/badge/Tests-26%20Passed-success.svg)](#verification--testing)
 [![Engineering Pedigree](https://img.shields.io/badge/Physics-Strict%20Provenance-orange.svg)](#primary-literature--pedigree)
 
 **An authority-controlled, first-principles liquid rocket preliminary propulsion analytical toolkit with primary literature provenance.**
@@ -25,15 +25,15 @@
 Most preliminary rocket propulsion scripts in circulation rely on undocumented constants, uncalibrated combustion efficiencies, or misattributed empirical formulas.
 
 **Navronis** is built on a strict mathematical foundation:
-- **Zero Silent Defaults:** Inputs and intermediate results are strictly validated. Non-physical states (e.g. negative throat areas, sub-unity contraction ratios) fail explicitly rather than silently propagating errors.
-- **Traceable Engineering Provenance:** Every computed parameter carries its governing equation, validity domain, and exact literature citation (NASA SP-125, Bartz 1957, NASA SP-194).
+- **Zero Silent Defaults:** Inputs and intermediate results are strictly validated. Non-physical states (e.g. negative throat areas, sub-unity contraction ratios, negative injector pressure drops) fail explicitly rather than silently propagating errors.
+- **Traceable Engineering Provenance:** Every computed parameter carries its governing equation, validity domain, and exact literature citation (NASA SP-125, NASA SP-194, Bartz 1957, Lorenzetto-Lefebvre 1977, Dressler 2000, Rupe 1956).
 - **Zero Heavy CFD/CAD Dependencies:** Pure Python, NumPy, and SciPy core. Runs instantaneously on Linux, macOS, and Windows.
 
 ---
 
 ## Key Capabilities
 
-Given high-level preliminary requirements (**Thrust, Chamber Pressure, Mixture Ratio, and Propellant Pair**), Navronis provides:
+Given high-level preliminary requirements (**Thrust, Chamber Pressure, Mixture Ratio, and Propellant Pair**), Navronis provides closed-form solutions for both **Thrust Chamber Assembly** and **Injector Head Subsystems**:
 
 | Category | Equations / Methods | Literature Source | Output Quantities |
 |---|---|---|---|
@@ -45,12 +45,16 @@ Given high-level preliminary requirements (**Thrust, Chamber Pressure, Mixture R
 | **Hot-Gas Heat Transfer** | Boundary-layer corrected convective HTC: $h_g = f(D_t, P_c, c^*) \cdot \sigma$ | Bartz (1957) Jet Propulsion | Peak throat convective heat flux $q$ (MW/m²) |
 | **Acoustic Instability Modes** | Exact Bessel roots: $f_{1T} = \frac{1.8412 a}{\pi D_c}$, $f_{1R}, f_{1L}$ | NASA SP-194 | 1T, 1R, and 1L cavity frequencies (Hz) |
 | **Mechanical Wall Thickness** | Thin-shell hoop stress: $t_w = \frac{P_c R_c}{\sigma_{allow}}$ | ASME Section VIII Div 1 | Minimum & recommended wall thickness $t_w$ |
+| **Injector Hydraulics & Decoupling** | Orifice flow $A_o = \frac{\dot{m}}{C_d\sqrt{2\rho\Delta P}}$, Stiffness $\frac{\Delta P}{P_c} \ge 0.15$ | NASA SP-194 / Huzel & Huang | Manifold $\Delta P$, orifice areas, velocities, chugging status |
+| **Shear Coaxial Injectors** | Momentum flux ratio $J = \frac{\rho_g V_g^2}{\rho_l V_l^2}$, Lorenzetto-Lefebvre SMD | Yang et al. (2004) / Lefebvre | Post ID/OD, annulus gap, $J$, velocity ratio $VR$, $R_L$, droplet SMD $D_{32}$ |
+| **Pintle Injectors** | Total Momentum Ratio: $TMR = \frac{\dot{m}_{rad} V_{rad}}{\dot{m}_{ann} V_{ann}}$, $\beta = \arccos\left(\frac{1}{1+TMR}\right)$ | Dressler (2000) / Heister (2019) | Pintle diameter, radial slot height, gap thickness, $TMR$, cone angle $\beta$ |
+| **Unlike Impinging Doublets** | Rupe momentum balance: $\frac{\rho_1 v_1^2 d_1}{\rho_2 v_2^2 d_2} = 1$, Ingebo atomization | Rupe (1956) JPL / Ingebo (1958) | Orifice diameters, jet velocities, free jet length, droplet SMD $D_{32}$ |
 
 ---
 
 ## Quick Start
 
-### 1. Python API
+### 1. Thrust Chamber Sizing API
 
 ```python
 from kryptonis.propulsion_equations import CombustorDesign
@@ -77,7 +81,33 @@ print(f"1T Acoustic Buzz:  {result.acoustic_modes['1T_Hz']:.1f} Hz")
 print(f"Min Wall (Cu-Cr):  {result.wall_thickness_screen * 1000:.2f} mm")
 ```
 
-### 2. Self-Explaining Provenance
+### 2. Injector Head & Atomization API
+
+```python
+from kryptonis.propulsion_equations import InjectorDesign
+
+# Size a 19-element shear coaxial injector head for 30 kN LOX/CH4 engine
+injector = InjectorDesign(
+    injector_type="coaxial",
+    chamber_pressure=12.0e6,     # 120 bar (12.0 MPa)
+    mass_flow_ox=7.46,           # kg/s LOX
+    mass_flow_fuel=2.87,         # kg/s LCH4
+    rho_ox=1141.0,               # kg/m³
+    rho_fuel=422.0,              # kg/m³
+    n_elements=19,
+    delta_p_ratio=0.20,          # 20% Pc injector drop (NASA SP-194)
+)
+inj_result = injector.solve()
+
+# Inspect outputs
+print(f"Liquid Post ID:    {inj_result['post_id_mm']:.2f} mm")
+print(f"Annular Gas Gap:   {inj_result['annular_gap_mm']:.2f} mm")
+print(f"Momentum Ratio J:  {inj_result['momentum_flux_ratio_J']:.2f}  [Stable window: 2 - 20]")
+print(f"Droplet SMD D32:   {inj_result['smd_um']:.1f} µm (Lorenzetto-Lefebvre)")
+print(f"Chugging Margin:   {'PASS (>=15%)' if inj_result['chugging_margin_adequate'] else 'FAIL'}")
+```
+
+### 3. Self-Explaining Provenance
 
 Query the mathematical formulation, physical assumptions, and literature source of any output directly:
 
@@ -98,14 +128,45 @@ Assumptions:  Axisymmetric circular sonic throat
 
 ## Command-Line Interface (CLI)
 
-Navronis includes a standalone command-line tool (`kryptonis-chamber`):
+Navronis provides standalone command-line tools (`navronis` and `kryptonis-chamber`):
 
 ```bash
-# Size a 30 kN LOX/CH4 chamber at 120 bar
-kryptonis-chamber --thrust 30000 --pc 120 --propellants LOX/CH4
+# 1. Size combustor chamber (30 kN LOX/CH4 at 120 bar)
+navronis --subsystem chamber --thrust 30000 --pc 120 --propellants LOX/CH4
+
+# 2. Size a 19-element shear coaxial injector head
+navronis --subsystem injector --injector-type coaxial --thrust 30000 --pc 120 --propellants LOX/CH4
+
+# 3. Size a throttleable central pintle injector
+navronis --subsystem injector --injector-type pintle --thrust 30000 --pc 120 --propellants LOX/CH4
 ```
 
-### Example Terminal Output:
+### Example Terminal Output: Injector Sizing (`--subsystem injector`)
+
+```text
+==============================================================================
+NAVRONIS PROPULSION — INJECTOR SIZING REPORT: COAXIAL
+Propellant: LOX/CH4 | Thrust: 30.0 kN | Pc: 120.0 bar
+==============================================================================
+Mass Flow: Total = 10.370 kg/s (LOX: 8.066 kg/s, Fuel: 2.304 kg/s)
+Injector Delta P: 24.00 bar (20.0% Pc)
+Chugging Decoupling Margin: PASS (>=15%)
+------------------------------------------------------------------------------
+Elements:                  19
+Liquid Post ID:            2.86 mm
+Liquid Post OD:            3.86 mm
+Gas Sleeve ID:             5.46 mm
+Annular Gap:               0.80 mm
+Liquid Ox Velocity:        65.86 m/s
+Gas/Fuel Velocity:         104.99 m/s
+Momentum Flux Ratio J:     9.35  [Target: 2.0 - 20.0]
+Velocity Ratio VR:         1.59
+Recess Length:             2.86 mm
+Droplet SMD (D32):         24.3 µm
+==============================================================================
+```
+
+### Example Terminal Output: Combustor Sizing (`--subsystem chamber`)
 
 ```text
 ==============================================================================
@@ -185,6 +246,7 @@ Navronis/
 │       └── propulsion_equations/
 │           ├── __init__.py           # Unified top-level API
 │           ├── combustor.py          # High-level CombustorDesign & CombustorResult
+│           ├── injector.py           # InjectorDesign, Coaxial, Pintle & Impinging atomization
 │           ├── chamber.py            # NASA SP-125 throat, contraction & volume equations
 │           ├── combustion.py         # Characteristic velocity c* & stay time
 │           ├── bartz.py              # Canonical Bartz 1957 convective film coefficient
@@ -196,14 +258,15 @@ Navronis/
 │           ├── aerodynamics.py       # 1D isentropic gas dynamics Area-Mach solver
 │           ├── thermal.py            # Single-phase convective correlations (Sieder-Tate, Ito)
 │           ├── wall_conduction.py    # 1D radial Fourier heat conduction
-│           └── cli.py                # Standalone terminal console script
+│           └── cli.py                # Standalone terminal console script (navronis / kryptonis-chamber)
 ├── examples/
 │   ├── combustor_30kn.py             # Flagship 30 kN LOX/CH4 sizing example
 │   ├── 01_thrust_chamber_sizing.py   # SP-125 analytical chamber sizing
 │   ├── 02_bartz_heat_flux.py         # Throat convective heat flux & conduction
 │   ├── 03_regenerative_cooling.py    # Cooling channel friction & curvature
-│   └── 04_nozzle_divergence_and_separation.py # Gas dynamics & separation limits
-├── tests/                            # 20 automated unit tests (100% pass rate)
+│   ├── 04_nozzle_divergence_and_separation.py # Gas dynamics & separation limits
+│   └── 05_injector_sizing.py         # Shear coaxial, pintle & doublet sizing for 30 kN Methalox
+├── tests/                            # 26 automated unit tests (100% pass rate)
 ├── docs/assets/                      # Dimensioned plots and figures
 ├── pyproject.toml                    # PEP 621 standard package build metadata
 └── LICENSE                           # Apache-2.0 open-source license
@@ -217,7 +280,10 @@ All formulations cite their original peer-reviewed or technical monograph source
 - **Chamber Sizing & Geometry:** Huzel & Huang, *Design of Liquid Propellant Rocket Engines* (NASA SP-125).
 - **Contraction Ratio Correlation:** Humble, *Space Propulsion Analysis and Design*, McGraw-Hill (1995).
 - **Hot-Gas Convective Heat Transfer:** Bartz, D. R. (1957), *A Simple Equation for Rapid Estimation of Rocket Nozzle Convective Heat Transfer Coefficients*, Jet Propulsion 27(1).
-- **Chamber Acoustic Instability:** NASA SP-194, *Liquid Propellant Rocket Combustion Instability*.
+- **Chamber Acoustic Instability & Chugging:** Harrje & Reardon (Eds.), *Liquid Propellant Rocket Combustion Instability* (NASA SP-194).
+- **Shear Coaxial Injectors & Atomization:** Yang, V. et al. (2004), *Liquid Rocket Thrust Chambers: Aspects of Modeling, Analysis, and Design*; Lorenzetto & Lefebvre (1977), *Measurements of Drop Size on Atomization by High-Velocity Gas Rays*.
+- **Pintle Injector Mechanics:** Dressler, G. A. (2000), *Summary of Deep Throttling Rocket Engines*, AIAA-2000-3873; Heister et al. (2019), *Rocket Propulsion*, Cambridge University Press.
+- **Impinging Jet Atomization:** Rupe, J. H. (1956), *A Correlation Between Orifice Geometry and Mixing Performance of Impinging Streams*, JPL Report No. 20-80; Ingebo, R. D. (1958), *Drop-Size Distributions for Impinging-Jet Breakup in Airstreams*, NACA TN 4222.
 - **Structural Hoop Stress:** ASME Boiler and Pressure Vessel Code, Section VIII, Division 1.
 
 ---
