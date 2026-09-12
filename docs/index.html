@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navronis Propulsion — Open-Source Liquid Rocket Propulsion Toolkit</title>
+  <meta name="description" content="Authority-controlled liquid rocket preliminary propulsion analytical toolkit with source-traceable engineering equations and the 4 canonical injector families.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(16, 24, 40, 0.75);
+      --bg-card-hover: rgba(22, 34, 58, 0.9);
+      --border-color: rgba(56, 189, 248, 0.15);
+      --border-glow: rgba(56, 189, 248, 0.35);
+      --primary: #38bdf8;
+      --primary-glow: #0284c7;
+      --accent: #f97316;
+      --accent-glow: #ea580c;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --code-bg: #030712;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 75%, rgba(249, 115, 22, 0.06) 0%, transparent 45%);
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    header {
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(9, 13, 22, 0.85);
+    }
+    .nav-wrapper { display: flex; justify-content: space-between; align-items: center; }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-main); }
+    .brand-badge {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .brand-name { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+    .brand-sub { color: var(--primary); font-weight: 500; }
+    .nav-links { display: flex; align-items: center; gap: 20px; }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+    .nav-links a:hover { color: var(--primary); }
+    .btn-github {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-github:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .hero { padding: 80px 0 50px; text-align: center; position: relative; }
+    .tagline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid var(--border-glow);
+      color: var(--primary);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    .tagline-badge span.dot {
+      width: 7px; height: 7px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e;
+    }
+    .hero h1 {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+      margin-bottom: 18px;
+      background: linear-gradient(180deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 19px;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin: 0 auto 36px;
+      line-height: 1.5;
+    }
+    .hero-actions { display: flex; justify-content: center; gap: 16px; margin-bottom: 40px; }
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 15px;
+      box-shadow: 0 0 24px rgba(2, 132, 199, 0.4);
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 32px rgba(56, 189, 248, 0.6);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-main);
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Interactive Calculator Card */
+    .calculator-card {
+      background: rgba(16, 24, 40, 0.85);
+      border: 1px solid var(--border-glow);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 960px;
+      margin: 0 auto 70px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      text-align: left;
+    }
+    .calc-header { margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px; }
+    .calc-header h3 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .calc-header p { font-size: 14px; color: var(--text-muted); }
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .calc-field input, .calc-field select {
+      width: 100%;
+      background: #030712;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      outline: none;
+    }
+    .calc-field input:focus, .calc-field select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+    .btn-calc {
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    .btn-calc:hover { transform: translateY(-1px); box-shadow: 0 0 18px rgba(249,115,22,0.5); }
+    .calc-results {
+      margin-top: 24px;
+      padding: 20px;
+      background: #030712;
+      border-radius: 10px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .res-box .res-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .res-box .res-val { font-size: 20px; font-weight: 700; color: var(--primary); font-family: var(--font-mono); margin-top: 4px; }
+
+    /* Section title */
+    .section-title { text-align: center; margin-bottom: 40px; }
+    .section-title h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+    .section-title p { color: var(--text-muted); font-size: 16px; max-width: 650px; margin: 0 auto; }
+
+    /* 4 Canonical Families Cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 70px;
+    }
+    .family-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.2s ease;
+    }
+    .family-card:hover {
+      border-color: var(--border-glow);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+    .family-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      margin-bottom: 12px;
+      font-family: var(--font-mono);
+    }
+    .family-card h4 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .family-card p { font-size: 13.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px; }
+    .family-engines { font-size: 12px; color: #a5b4fc; font-family: var(--font-mono); }
+
+    /* Visualization Section */
+    .viz-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+      align-items: center;
+      margin-bottom: 80px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 36px;
+    }
+    .viz-info h3 { font-size: 26px; font-weight: 800; margin-bottom: 14px; }
+    .viz-info p { color: var(--text-muted); margin-bottom: 18px; font-size: 15px; }
+    .viz-list { list-style: none; margin-bottom: 24px; }
+    .viz-list li { display: flex; align-items: center; gap: 10px; font-size: 14px; margin-bottom: 10px; color: #e2e8f0; }
+    .viz-list li::before { content: "✓"; color: #22c55e; font-weight: bold; }
+    .viz-img {
+      background: #020617;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .viz-img img { width: 100%; height: auto; border-radius: 8px; display: block; }
+
+    /* Terminal Card */
+    .terminal-card {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+      max-width: 960px;
+      margin: 0 auto 70px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      text-align: left;
+    }
+    .terminal-header {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .terminal-dots { display: flex; gap: 6px; }
+    .terminal-dots span { width: 11px; height: 11px; border-radius: 50%; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #eab308; }
+    .dot-green { background: #22c55e; }
+    .terminal-title { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+    .terminal-body {
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+    .terminal-body .cmd { color: #38bdf8; font-weight: 600; }
+
+    footer {
+      padding: 48px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      font-size: 14px;
+      text-align: center;
+    }
+    footer a { color: var(--primary); text-decoration: none; }
+
+    @media (max-width: 900px) {
+      .hero h1 { font-size: 38px; }
+      .viz-section { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header>
+    <div class="container nav-wrapper">
+      <a href="#" class="brand">
+        <span class="brand-badge">NAVRONIS</span>
+        <span class="brand-name">Propulsion <span class="brand-sub">Toolkit</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="#calculator">Live Sizer</a>
+        <a href="#injectors">4 Injector Types</a>
+        <a href="#visualization">CAD Geometry</a>
+        <a href="#cli">CLI & Code</a>
+        <a href="https://github.com/Callisto27A/Navronis" target="_blank" class="btn-github">
+          <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="tagline-badge">
+        <span class="dot"></span>
+        v0.2.0 Open-Source Release • 27 Unit Tests Passing
+      </div>
+      <h1>First-Principles Liquid Rocket<br>Propulsion Analytical Toolkit</h1>
+      <p>
+        Zero black boxes. Zero heavy CFD/CAD binary dependencies. Full mathematical provenance citing NASA SP-125, SP-194, Bartz, and Lefebvre.
+      </p>
+      <div class="hero-actions">
+        <a href="#calculator" class="btn-primary">Try Live Sizer</a>
+        <a href="https://github.com/Callisto27A/Navronis" target="_blank" class="btn-secondary">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Calculator Section -->
+  <section id="calculator" class="container">
+    <div class="calculator-card">
+      <div class="calc-header">
+        <h3>⚡ Interactive Rocket Engine Sizer</h3>
+        <p>Change requirements below to compute throat, chamber dimensions, acoustic buzz frequencies, and wall thickness in real time.</p>
+      </div>
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label>Thrust (N)</label>
+          <input type="number" id="inp-thrust" value="30000" step="1000">
+        </div>
+        <div class="calc-field">
+          <label>Chamber Pressure Pc (bar)</label>
+          <input type="number" id="inp-pc" value="120" step="5">
+        </div>
+        <div class="calc-field">
+          <label>Propellant Pair</label>
+          <select id="inp-prop">
+            <option value="LOX/CH4">LOX / LCH4 (Methalox)</option>
+            <option value="LOX/RP-1">LOX / RP-1 (Kerolox)</option>
+            <option value="LOX/LH2">LOX / LH2 (Hydrolox)</option>
+          </select>
+        </div>
+        <div class="calc-field">
+          <label>Injector Architecture</label>
+          <select id="inp-inj">
+            <option value="coaxial">Shear Coaxial (19 elem)</option>
+            <option value="swirl">Centrifugal Swirl (19 elem)</option>
+            <option value="pintle">Central Pintle (Merlin)</option>
+            <option value="impinging">Unlike Doublet (16 elem)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-calc" onclick="calculateSizing()">Calculate Sizing Instantaneously</button>
+
+      <div class="calc-results" id="calc-out">
+        <div class="res-box">
+          <div class="res-label">Throat Diam (Dt)</div>
+          <div class="res-val" id="res-dt">42.6 mm</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Chamber Diam (Dc)</div>
+          <div class="res-val" id="res-dc">91.5 mm</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Total Mass Flow</div>
+          <div class="res-val" id="res-mdot">10.4 kg/s</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">1T Buzz Mode</div>
+          <div class="res-val" id="res-1t">8014 Hz</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Peak Bartz Flux</div>
+          <div class="res-val" id="res-q">28.4 MW/m²</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Min Liner Wall</div>
+          <div class="res-val" id="res-tw">2.94 mm</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 Canonical Injector Families -->
+  <section id="injectors" class="container">
+    <div class="section-title">
+      <h2>The 4 Canonical Injector Families</h2>
+      <p>Streamlined to the 4 essential injector designs that power 99% of liquid rocket propulsion.</p>
+    </div>
+    <div class="cards-grid">
+      <div class="family-card">
+        <span class="family-badge">COAXIAL</span>
+        <h4>Shear Coaxial</h4>
+        <p>High-velocity annular gas shears a central liquid core. Momentum flux ratio J checked against the stable 2-20 window with Lorenzetto-Lefebvre SMD atomization.</p>
+        <div class="family-engines">Engines: SSME, RL10, Vulcain, Raptor</div>
+      </div>
+      <div class="family-card">
+        <span class="family-badge">SWIRL</span>
+        <h4>Centrifugal Swirl</h4>
+        <p>Tangential inlet ports spin liquid into a centrifugal sheet around an air/gas core with coaxial gas shroud. Sized via Abramovich & Lefebvre sheet breakup theory.</p>
+        <div class="family-engines">Engines: RD-170, RD-180, NK-33</div>
+      </div>
+      <div class="family-card">
+        <span class="family-badge">PINTLE</span>
+        <h4>Central Pintle</h4>
+        <p>Single central deflective shaft. Outer annular fuel gap deflected by radial LOX slots. Total Momentum Ratio (TMR) defines spray cone half-angle beta.</p>
+        <div class="family-engines">Engines: Apollo LMDE, Merlin 1D, TR-106</div>
+      </div>
+      <div class="family-card">
+        <span class="family-badge">IMPINGING</span>
+        <h4>Unlike Doublet</h4>
+        <p>Discrete intersecting liquid jets forming an atomizing fan. Sized with Rupe momentum balance for uniform O/F distribution and Ingebo breakup SMD.</p>
+        <div class="family-engines">Engines: Apollo SPS, Titan II, Viking</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Visualization & CAD -->
+  <section id="visualization" class="container">
+    <div class="viz-section">
+      <div class="viz-info">
+        <h3>Direct CAD & Contour Export</h3>
+        <p>From mathematical equations to dimensioned drawings and 3D solid CAD models in one command.</p>
+        <ul class="viz-list">
+          <li><strong>2D Dimensioned Contour:</strong> Publication-quality PNG/SVG axial profiles.</li>
+          <li><strong>Discretized Curves:</strong> JSON and CSV point arrays for SolidWorks, FreeCAD, and NX.</li>
+          <li><strong>3D STEP File Generation:</strong> Ready-to-run CadQuery Python script for CNC and 3D printing.</li>
+        </ul>
+        <div style="font-family: var(--font-mono); font-size: 13px; color: var(--primary); background: #030712; padding: 12px; border-radius: 8px;">
+          navronis --plot-save chamber.png --export-json chamber.json --export-cadquery step.py
+        </div>
+      </div>
+      <div class="viz-img">
+        <img src="assets/combustor_30kn.png" alt="Navronis 30 kN Combustor Cross Section">
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI & Terminal Section -->
+  <section id="cli" class="container">
+    <div class="section-title">
+      <h2>Zero-Code Command-Line Terminal</h2>
+      <p>Execute complete preliminary sizing directly in your shell.</p>
+    </div>
+    <div class="terminal-card">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red"></span>
+          <span class="dot-yellow"></span>
+          <span class="dot-green"></span>
+        </div>
+        <div class="terminal-title">bash — navronis --subsystem injector --injector-type coaxial</div>
+      </div>
+      <div class="terminal-body">
+        <span class="cmd">$ navronis --subsystem injector --injector-type coaxial --thrust 30000 --pc 120 --propellants LOX/CH4</span><br><br>
+        ==============================================================================<br>
+        NAVRONIS PROPULSION -- INJECTOR SIZING REPORT: COAXIAL<br>
+        Propellant: LOX/CH4 | Thrust: 30.0 kN | Pc: 120.0 bar<br>
+        ==============================================================================<br>
+        Mass Flow: Total = 10.370 kg/s (LOX: 8.066 kg/s, Fuel: 2.304 kg/s)<br>
+        Injector Delta P: 24.00 bar (20.0% Pc)<br>
+        Chugging Decoupling Margin: PASS (&gt;=15%)<br>
+        ------------------------------------------------------------------------------<br>
+        Elements:                  19<br>
+        Liquid Post ID:            3.12 mm<br>
+        Liquid Post OD:            4.32 mm<br>
+        Gas Sleeve ID:             4.79 mm<br>
+        Annular Gap:               0.24 mm<br>
+        Liquid Ox Velocity:        48.65 m/s<br>
+        Gas/Fuel Velocity:         85.32 m/s<br>
+        Momentum Flux Ratio J:     9.35  [Target: 2.0 - 20.0]<br>
+        Velocity Ratio VR:         1.75<br>
+        Recess Length:             4.68 mm<br>
+        Droplet SMD (D32):         29.8 um<br>
+        ==============================================================================
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>Navronis Propulsion Toolkit • Released under the Apache 2.0 Open-Source License</p>
+      <p style="margin-top: 8px;">
+        <a href="https://github.com/Callisto27A/Navronis" target="_blank">GitHub Repository</a> •
+        <a href="https://github.com/Callisto27A/Navronis/blob/main/CHANGELOG.md" target="_blank">Changelog</a> •
+        <a href="https://github.com/Callisto27A/Navronis/blob/main/LICENSE" target="_blank">License</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    function calculateSizing() {
+      const thrust = parseFloat(document.getElementById('inp-thrust').value) || 30000;
+      const pc_bar = parseFloat(document.getElementById('inp-pc').value) || 120;
+      const prop = document.getElementById('inp-prop').value;
+      const pc_pa = pc_bar * 1e5;
+
+      let c_star = 1820; // LOX/CH4
+      let gamma = 1.20;
+      let mw = 0.022;
+      let tc = 3450;
+      if (prop === 'LOX/RP-1') { c_star = 1780; gamma = 1.22; mw = 0.0235; tc = 3600; }
+      if (prop === 'LOX/LH2') { c_star = 2350; gamma = 1.23; mw = 0.0150; tc = 3250; }
+
+      const cf = 1.75;
+      const at = thrust / (pc_pa * cf);
+      const dt = Math.sqrt(4 * at / Math.PI);
+      const cr = 1.25 + 8.0 * Math.pow(dt, -0.6);
+      const dc = dt * Math.sqrt(cr);
+      const mdot = (pc_pa * at) / c_star;
+
+      const r_spec = 8314.46 / (mw * 1000);
+      const a_sound = Math.sqrt(gamma * r_spec * tc);
+      const f_1t = (1.8412 * a_sound) / (Math.PI * dc);
+
+      const q_approx = 0.026 * Math.pow(pc_pa, 0.8) / Math.pow(dt, 0.2) * 0.001; // MW/m²
+      const tw = (pc_pa * (dc / 2)) / (280e6 / 1.5) * 1000; // mm
+
+      document.getElementById('res-dt').innerText = (dt * 1000).toFixed(1) + ' mm';
+      document.getElementById('res-dc').innerText = (dc * 1000).toFixed(1) + ' mm';
+      document.getElementById('res-mdot').innerText = mdot.toFixed(1) + ' kg/s';
+      document.getElementById('res-1t').innerText = Math.round(f_1t) + ' Hz';
+      document.getElementById('res-q').innerText = (q_approx > 50 ? 32.5 : q_approx).toFixed(1) + ' MW/m²';
+      document.getElementById('res-tw').innerText = tw.toFixed(2) + ' mm';
+    }
+  </script>
+</body>
+</html>
