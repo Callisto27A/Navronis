@@ -2,6 +2,7 @@
 
 <div align="center">
 
+[![Live Web App](https://img.shields.io/badge/Live%20Demo-Interactive%20Web%20App-blueviolet.svg?style=for-the-badge&logo=firefox)](https://callisto27a.github.io/Navronis/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-brightgreen.svg)](https://python.org)
 [![Build & Test](https://img.shields.io/badge/Tests-27%20Passed-success.svg)](#verification--testing)
@@ -9,15 +10,17 @@
 
 **An authority-controlled, first-principles liquid rocket preliminary propulsion analytical toolkit with primary literature provenance.**
 
+[🚀 **Live Interactive App**](https://callisto27a.github.io/Navronis/) •
 [Key Capabilities](#key-capabilities) •
 [4 Canonical Injector Families](#the-4-canonical-injector-families) •
 [Quick Start](#quick-start) •
 [CLI Usage](#command-line-interface) •
-[Self-Explaining Provenance](#self-explaining-provenance) •
-[CAD Export](#cad-export--visualization) •
+[Community Issues](#community-auditing--contributing) •
 [Architecture](#architecture--project-structure)
 
 </div>
+
+> 🚀 **Live Interactive Web Sizer:** [**callisto27a.github.io/Navronis**](https://callisto27a.github.io/Navronis/) — Run combustor and injector sizing, view interactive SVG cross-sections, switch propellants, inspect droplet SMD calculations, and verify test matrices directly in your browser with zero installation!
 
 ---
 
@@ -316,12 +319,25 @@ All formulations cite their original peer-reviewed or technical monograph source
 > - It is **NOT** a substitute for 3D reacting CFD, conjugate heat transfer (CHT), or finite element structural analysis (FEA).
 > - Acoustic modes are **frequencies only**, not a dynamic stability assessment (which requires hardware-measured injector response functions $n$ and $	au$).
 
+## Community Auditing & Contributing
+
+We actively encourage propulsion engineers, students, and aerodynamicists to audit equations, report edge cases, and contribute improvements:
+
+| Issue | Area | Description | Status |
+|---|---|---|---|
+| [**#1**](https://github.com/Callisto27A/Navronis/issues/1) | **Chamber / Heat Transfer** | Primary Literature Review: Contraction Ratio & Bartz Heat Flux Boundary Limits | 🟢 Open |
+| [**#2**](https://github.com/Callisto27A/Navronis/issues/2) | **Injectors / Atomization** | Benchmarking Droplet SMD ($D_{32}$) Models Against Experimental Cold-Flow Data | 🟢 Open |
+| [**#3**](https://github.com/Callisto27A/Navronis/issues/3) | **Thermal / Cooling** | Component 3: Axial Bartz Thermal Marching & Regenerative Cooling Channels | 🟢 Open |
+| [**#4**](https://github.com/Callisto27A/Navronis/issues/4) | **Propellants / Presets** | Good First Issue: Add Storable Monopropellants & Hypergolic Presets (N₂O₄/MMH, Hydrazine) | 🟢 Open |
+
+To propose equation adjustments or add literature benchmarks, open an issue or pull request referencing the primary literature source (NASA SP, JANNAF, AIAA, ASME).
+
 ---
 
 ## Installation
 
 ```bash
-git clone https://github.com/Ritik27Payak/Navronis.git
+git clone https://github.com/Callisto27A/Navronis.git
 cd Navronis
 pip install -e .
 ```
