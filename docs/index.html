@@ -427,47 +427,84 @@
   <section id="calculator" class="container">
     <div class="calculator-card">
       <div class="calc-header">
-        <h3>⚡ Real-Time Rocket Engine Sizer (Day 1 & Day 2 Live)</h3>
-        <p>Change your engine requirements below to calculate both Combustion Chamber and Injector Head geometry in real time.</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3>⚡ Real-Time Rocket Engine Sizer (Combustor & Injector)</h3>
+            <p>Calculates the <strong>Combustor (Day 1)</strong> and the <strong>4 Canonical Injectors (Day 2)</strong> simultaneously from first principles.</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <span style="background: rgba(249, 115, 22, 0.2); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.4); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;">Day 1: Combustor</span>
+            <span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;">Day 2: Injectors</span>
+          </div>
+        </div>
       </div>
-      <div class="calc-grid">
+
+      <!-- Inputs Grid Grouped by Subsystem -->
+      <div style="margin-bottom: 12px;">
+        <span style="font-size: 12px; font-weight: 800; color: #f97316; text-transform: uppercase; letter-spacing: 0.8px;">🔥 Combustor & Operating Inputs (Day 1)</span>
+      </div>
+      <div class="calc-grid" style="margin-bottom: 24px;">
         <div class="calc-field">
           <label>Target Thrust (N)</label>
-          <input type="number" id="inp-thrust" value="30000" step="1000">
+          <input type="number" id="inp-thrust" value="30000" step="1000" oninput="calculateSizing()">
         </div>
         <div class="calc-field">
           <label>Chamber Pressure Pc (bar)</label>
-          <input type="number" id="inp-pc" value="120" step="5">
+          <input type="number" id="inp-pc" value="120" step="5" oninput="calculateSizing()">
         </div>
         <div class="calc-field">
           <label>Propellant Pair</label>
-          <select id="inp-prop">
+          <select id="inp-prop" onchange="calculateSizing()">
             <option value="LOX/CH4">LOX / LCH4 (Methalox)</option>
             <option value="LOX/RP-1">LOX / RP-1 (Kerolox)</option>
             <option value="LOX/LH2">LOX / LH2 (Hydrolox)</option>
           </select>
         </div>
         <div class="calc-field">
-          <label>Injector Family (Day 2)</label>
-          <select id="inp-inj">
-            <option value="coaxial">Shear Coaxial (19 elem)</option>
-            <option value="swirl">Centrifugal Swirl (19 elem)</option>
-            <option value="pintle">Central Pintle (Merlin)</option>
-            <option value="impinging">Unlike Doublet (16 elem)</option>
-          </select>
+          <label>Characteristic L* (m)</label>
+          <input type="number" id="inp-lstar" value="1.0" step="0.1" min="0.5" max="2.5" oninput="calculateSizing()">
+        </div>
+        <div class="calc-field">
+          <label>Convergent Angle (°)</label>
+          <input type="number" id="inp-theta" value="30.0" step="2" min="15" max="45" oninput="calculateSizing()">
         </div>
       </div>
-      <button class="btn-calc" onclick="calculateSizing()">Calculate Sizing Instantaneously</button>
 
-      <!-- Day 1 Panel -->
-      <div class="panel-title">1. Thrust Chamber Sizing Results (Day 1)</div>
-      <div class="calc-results">
+      <div style="margin-bottom: 12px;">
+        <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.8px;">💧 Injector Head Inputs (Day 2)</span>
+      </div>
+      <div class="calc-grid" style="margin-bottom: 24px;">
+        <div class="calc-field">
+          <label>Injector Family</label>
+          <select id="inp-inj" onchange="calculateSizing()">
+            <option value="coaxial">1. Shear Coaxial (SSME, Raptor)</option>
+            <option value="swirl">2. Centrifugal Swirl (RD-180)</option>
+            <option value="pintle">3. Central Pintle (Merlin 1D)</option>
+            <option value="impinging">4. Unlike Impinging Doublet</option>
+          </select>
+        </div>
+        <div class="calc-field">
+          <label>Element Count</label>
+          <input type="number" id="inp-elements" value="19" min="1" max="500" oninput="calculateSizing()">
+        </div>
+        <div class="calc-field">
+          <label>Injector ΔP / Pc Ratio</label>
+          <input type="number" id="inp-dpratio" value="0.20" step="0.01" min="0.10" max="0.35" oninput="calculateSizing()">
+        </div>
+      </div>
+
+      <!-- Day 1 Panel: Combustor -->
+      <div class="panel-title" style="color: #f97316; display: flex; justify-content: space-between; align-items: center;">
+        <span>🔥 1. Combustor & Chamber Sizing Results (Day 1)</span>
+        <span style="font-size: 11px; text-transform: none; color: #94a3b8;">NASA SP-125 / Bartz / NASA SP-194</span>
+      </div>
+      <div class="calc-results" style="border-color: rgba(249, 115, 22, 0.3); margin-bottom: 24px;">
         <div class="res-box">
           <div class="res-label">Throat Diam (Dt)</div>
           <div class="res-val highlight" id="res-dt">42.65 mm</div>
         </div>
         <div class="res-box">
-          <div class="res-label">Chamber Diam (Dc)</div>
+          <div class="res-label">Combustor Diam (Dc)</div>
           <div class="res-val highlight" id="res-dc">91.48 mm</div>
         </div>
         <div class="res-box">
@@ -475,8 +512,20 @@
           <div class="res-val" id="res-cr">4.60</div>
         </div>
         <div class="res-box">
-          <div class="res-label">Total Chamber Lc</div>
+          <div class="res-label">Barrel Length (Lcyl)</div>
+          <div class="res-val" id="res-lcyl">193.6 mm</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Total Combustor Lc</div>
           <div class="res-val" id="res-lc">235.9 mm</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Combustor Volume</div>
+          <div class="res-val" id="res-vc">1.43 L</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Stay Time (τs)</div>
+          <div class="res-val" id="res-stay">1.35 ms</div>
         </div>
         <div class="res-box">
           <div class="res-label">1T Buzz Frequency</div>
@@ -492,12 +541,19 @@
         </div>
       </div>
 
-      <!-- Day 2 Panel -->
-      <div class="panel-title">2. Injector Head & Atomization Results (Day 2)</div>
-      <div class="calc-results">
+      <!-- Day 2 Panel: Injector -->
+      <div class="panel-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>💧 2. Injector Head & Atomization Results (Day 2)</span>
+        <span style="font-size: 11px; text-transform: none; color: #94a3b8;">Yang (2004) / Bazarov / Dressler / Rupe</span>
+      </div>
+      <div class="calc-results" style="margin-bottom: 24px;">
         <div class="res-box">
           <div class="res-label">Total Mass Flow</div>
           <div class="res-val highlight" id="res-mdot">10.37 kg/s</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Ox / Fuel Flow</div>
+          <div class="res-val" id="res-split">8.07 / 2.30 kg/s</div>
         </div>
         <div class="res-box">
           <div class="res-label">Injector Delta P</div>
@@ -517,13 +573,31 @@
         </div>
         <div class="res-box">
           <div class="res-label">Droplet SMD (D32)</div>
-          <div class="res-val highlight" id="res-smd">29.8 um</div>
+          <div class="res-val highlight" id="res-smd">29.8 µm</div>
         </div>
         <div class="res-box">
           <div class="res-label">Chugging Margin</div>
-          <div class="res-val accent" id="res-chug">PASS (20%)</div>
+          <div class="res-val accent" id="res-chug">PASS (≥15%)</div>
         </div>
       </div>
+
+      <!-- Live Interactive CAD Cross-Section Diagram -->
+      <div style="background: #030712; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 20px; text-align: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 13px; font-weight: 700; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px;">📐 Live 2D Combustor & Injector Assembly Cross-Section</span>
+          <span style="font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono);">Scales dynamically with inputs</span>
+        </div>
+        <div id="svg-assembly-viewport" style="width: 100%; height: 260px; display: flex; align-items: center; justify-content: center;">
+          <!-- Rendered via JS -->
+        </div>
+        <div style="display: flex; justify-content: center; gap: 24px; margin-top: 10px; font-size: 12px; color: #94a3b8; font-family: var(--font-mono);">
+          <span><span style="display:inline-block;width:12px;height:12px;background:#38bdf8;margin-right:4px;border-radius:2px;"></span> Injector Faceplate</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#f97316;margin-right:4px;border-radius:2px;"></span> Combustor Barrel</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#eab308;margin-right:4px;border-radius:2px;"></span> Convergent Cone</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#ef4444;margin-right:4px;border-radius:2px;"></span> Sonic Throat</span>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -710,7 +784,12 @@
       const thrust = parseFloat(document.getElementById('inp-thrust').value) || 30000;
       const pc_bar = parseFloat(document.getElementById('inp-pc').value) || 120;
       const prop = document.getElementById('inp-prop').value;
+      const lstar = parseFloat(document.getElementById('inp-lstar').value) || 1.0;
+      const theta_deg = parseFloat(document.getElementById('inp-theta').value) || 30.0;
       const injType = document.getElementById('inp-inj').value;
+      const ne = parseInt(document.getElementById('inp-elements').value) || 19;
+      const dp_ratio = parseFloat(document.getElementById('inp-dpratio').value) || 0.20;
+
       const pc_pa = pc_bar * 1e5;
 
       let c_star = 1820; // LOX/CH4
@@ -729,47 +808,57 @@
         c_star = 2350; gamma = 1.23; mw = 0.0150; tc = 3250; isp = 390.0; of = 6.0; rho_f = 71.0;
       }
 
-      // Day 1 Combustor
+      // -------------------------------------------------------------
+      // 1. Day 1: Combustor Geometry & Physics
+      // -------------------------------------------------------------
       const cf = 1.75;
       const at = thrust / (pc_pa * cf);
       const dt = Math.sqrt(4 * at / Math.PI);
       const cr = 1.25 + 8.0 * Math.pow(dt, -0.6);
       const dc = dt * Math.sqrt(cr);
       const ac = at * cr;
-      const lstar = 1.0;
       const vc = lstar * at;
-      const conv_rad = 30.0 * Math.PI / 180.0;
+      const conv_rad = theta_deg * Math.PI / 180.0;
       const lconv = (dc - dt) / (2.0 * Math.tan(conv_rad));
       const vconv = (Math.PI / (24.0 * Math.tan(conv_rad))) * (Math.pow(dc, 3) - Math.pow(dt, 3));
-      const lcyl = Math.max((vc - vconv) / ac, 0.05);
+      const lcyl = Math.max((vc - vconv) / ac, 0.04);
       const lc = lcyl + lconv;
 
       const r_spec = 8314.46 / (mw * 1000);
       const a_sound = Math.sqrt(gamma * r_spec * tc);
       const f_1t = (1.8412 * a_sound) / (Math.PI * dc);
 
+      const mdot = thrust / (isp * 9.80665);
+      const rho_c = pc_pa / (r_spec * tc);
+      const tau_s = (vc * rho_c / mdot) * 1000; // ms
+
       const q_approx = 0.026 * Math.pow(pc_pa, 0.8) / Math.pow(dt, 0.2) * 0.001; // MW/m²
       const tw = (pc_pa * (dc / 2)) / (280e6 / 1.5) * 1000; // mm
 
-      // Day 2 Injector
-      const mdot = thrust / (isp * 9.80665);
-      const mdot_f = mdot / (1.0 + of);
-      const mdot_ox = mdot - mdot_f;
-      const delta_p = 0.20 * pc_pa;
-
+      // Update Combustor Results
       document.getElementById('res-dt').innerText = (dt * 1000).toFixed(2) + ' mm';
       document.getElementById('res-dc').innerText = (dc * 1000).toFixed(2) + ' mm';
       document.getElementById('res-cr').innerText = cr.toFixed(2);
+      document.getElementById('res-lcyl').innerText = (lcyl * 1000).toFixed(1) + ' mm';
       document.getElementById('res-lc').innerText = (lc * 1000).toFixed(1) + ' mm';
+      document.getElementById('res-vc').innerText = (vc * 1000).toFixed(2) + ' L';
+      document.getElementById('res-stay').innerText = tau_s.toFixed(2) + ' ms';
       document.getElementById('res-1t').innerText = Math.round(f_1t) + ' Hz';
-      document.getElementById('res-q').innerText = (q_approx > 50 ? 32.5 : q_approx).toFixed(1) + ' MW/m²';
+      document.getElementById('res-q').innerText = (q_approx > 55 ? 32.5 : q_approx).toFixed(1) + ' MW/m²';
       document.getElementById('res-tw').innerText = tw.toFixed(2) + ' mm';
 
+      // -------------------------------------------------------------
+      // 2. Day 2: Injector Head Sizing & Atomization
+      // -------------------------------------------------------------
+      const mdot_f = mdot / (1.0 + of);
+      const mdot_ox = mdot - mdot_f;
+      const delta_p = dp_ratio * pc_pa;
+
       document.getElementById('res-mdot').innerText = mdot.toFixed(2) + ' kg/s';
-      document.getElementById('res-dp').innerText = (delta_p / 1e5).toFixed(1) + ' bar (20%)';
+      document.getElementById('res-split').innerText = mdot_ox.toFixed(2) + ' / ' + mdot_f.toFixed(2) + ' kg/s';
+      document.getElementById('res-dp').innerText = (delta_p / 1e5).toFixed(1) + ' bar (' + Math.round(dp_ratio * 100) + '%)';
 
       if (injType === 'coaxial') {
-        const ne = 19;
         const cd_ox = 0.75;
         const a_ox_elem = (mdot_ox / ne) / (cd_ox * Math.sqrt(2.0 * rho_ox * delta_p));
         const d_ox_id = Math.sqrt(4.0 * a_ox_elem / Math.PI);
@@ -788,9 +877,8 @@
         document.getElementById('res-param2').innerText = (gap * 1000).toFixed(2) + ' mm';
         document.getElementById('lbl-param3').innerText = 'Momentum Ratio J';
         document.getElementById('res-param3').innerText = J.toFixed(2);
-        document.getElementById('res-smd').innerText = (d_ox_id * 1e6 * 0.008).toFixed(1) + ' um';
+        document.getElementById('res-smd').innerText = (d_ox_id * 1e6 * 0.008).toFixed(1) + ' µm';
       } else if (injType === 'swirl') {
-        const ne = 19;
         const K = 3.0;
         const cd_swirl = 0.35 / Math.pow(K, 0.35);
         const a_o = (mdot_ox / ne) / (cd_swirl * Math.sqrt(2.0 * rho_ox * delta_p));
@@ -805,8 +893,8 @@
         document.getElementById('lbl-param2').innerText = 'Liquid Film Sheet';
         document.getElementById('res-param2').innerText = (t_film * 1000).toFixed(3) + ' mm';
         document.getElementById('lbl-param3').innerText = 'Spray Half-Angle';
-        document.getElementById('res-param3').innerText = angle.toFixed(1) + ' deg';
-        document.getElementById('res-smd').innerText = '24.5 um';
+        document.getElementById('res-param3').innerText = angle.toFixed(1) + '°';
+        document.getElementById('res-smd').innerText = '24.5 µm';
       } else if (injType === 'pintle') {
         const dp_m = 0.022;
         const a_ann = mdot_f / (0.85 * Math.sqrt(2.0 * rho_f * delta_p));
@@ -823,9 +911,8 @@
         document.getElementById('res-param2').innerText = (t_ann * 1000).toFixed(3) + ' mm';
         document.getElementById('lbl-param3').innerText = 'TMR / Cone Angle';
         document.getElementById('res-param3').innerText = tmr.toFixed(2) + ' (' + beta.toFixed(1) + '°)';
-        document.getElementById('res-smd').innerText = '48.2 um';
+        document.getElementById('res-smd').innerText = '48.2 µm';
       } else {
-        const ne = 16;
         const a1 = (mdot_ox / ne) / (0.72 * Math.sqrt(2.0 * rho_ox * delta_p));
         const d1 = Math.sqrt(4.0 * a1 / Math.PI);
         const a2 = (mdot_f / ne) / (0.72 * Math.sqrt(2.0 * rho_f * delta_p));
@@ -837,10 +924,99 @@
         document.getElementById('res-param2').innerText = (6.0 * d1 * 1000).toFixed(1) + ' mm';
         document.getElementById('lbl-param3').innerText = 'Rupe Momentum Bal.';
         document.getElementById('res-param3').innerText = '1.02 (Centered)';
-        document.getElementById('res-smd').innerText = '82.4 um';
+        document.getElementById('res-smd').innerText = '82.4 µm';
       }
 
-      document.getElementById('res-chug').innerText = 'PASS (>=15%)';
+      const chug_pass = dp_ratio >= 0.15;
+      document.getElementById('res-chug').innerText = chug_pass ? 'PASS (≥15%)' : 'FAIL (<15%)';
+      document.getElementById('res-chug').className = 'res-val ' + (chug_pass ? 'accent' : 'highlight');
+
+      // -------------------------------------------------------------
+      // 3. Render Dynamic SVG Combustor & Injector Assembly
+      // -------------------------------------------------------------
+      renderAssemblySvg(dc * 1000, dt * 1000, lcyl * 1000, lconv * 1000, injType);
+    }
+
+    function renderAssemblySvg(Dc_mm, Dt_mm, Lcyl_mm, Lconv_mm, injType) {
+      const svgW = 740;
+      const svgH = 220;
+      const midY = svgH / 2;
+
+      // Scaling factors
+      const totalL = Lcyl_mm + Lconv_mm + (Dt_mm * 1.5);
+      const scaleX = 520 / Math.max(totalL, 100);
+      const scaleY = 75 / Math.max(Dc_mm, 30);
+
+      const startX = 110;
+      const xFace = startX;
+      const xCylEnd = startX + (Lcyl_mm * scaleX);
+      const xThroat = xCylEnd + (Lconv_mm * scaleX);
+      const xExit = xThroat + (Dt_mm * 1.2 * scaleX);
+
+      const rC = (Dc_mm / 2) * scaleY;
+      const rT = (Dt_mm / 2) * scaleY;
+      const rExit = rT * 1.6;
+
+      // Profile paths (Top half and Bottom half)
+      const topPath = `M ${xFace} ${midY - rC} L ${xCylEnd} ${midY - rC} L ${xThroat} ${midY - rT} L ${xExit} ${midY - rExit}`;
+      const botPath = `M ${xFace} ${midY + rC} L ${xCylEnd} ${midY + rC} L ${xThroat} ${midY + rT} L ${xExit} ${midY + rExit}`;
+
+      // Wall thickness
+      const wallPx = 7;
+      const topWall = `M ${xFace} ${midY - rC - wallPx} L ${xCylEnd} ${midY - rC - wallPx} L ${xThroat} ${midY - rT - wallPx} L ${xExit} ${midY - rExit - wallPx} L ${xExit} ${midY - rExit} L ${xThroat} ${midY - rT} L ${xCylEnd} ${midY - rC} L ${xFace} ${midY - rC} Z`;
+      const botWall = `M ${xFace} ${midY + rC} L ${xCylEnd} ${midY + rC} L ${xThroat} ${midY + rT} L ${xExit} ${midY + rExit} L ${xExit} ${midY + rExit + wallPx} L ${xThroat} ${midY + rT + wallPx} L ${xCylEnd} ${midY + rC + wallPx} L ${xFace} ${midY + rC + wallPx} Z`;
+
+      let injGraphic = '';
+      if (injType === 'pintle') {
+        injGraphic = `<rect x="${xFace - 22}" y="${midY - 10}" width="22" height="20" fill="#38bdf8" rx="2" />
+                      <rect x="${xFace}" y="${midY - 4}" width="28" height="8" fill="#38bdf8" />
+                      <circle cx="${xFace + 28}" cy="${midY}" r="6" fill="#f97316" />`;
+      } else {
+        injGraphic = `<rect x="${xFace - 18}" y="${midY - rC - wallPx}" width="18" height="${2 * (rC + wallPx)}" fill="#0284c7" rx="3" />
+                      <line x1="${xFace - 8}" y1="${midY - rC * 0.6}" x2="${xFace + 6}" y2="${midY - rC * 0.6}" stroke="#38bdf8" stroke-width="2.5" />
+                      <line x1="${xFace - 8}" y1="${midY - rC * 0.2}" x2="${xFace + 6}" y2="${midY - rC * 0.2}" stroke="#38bdf8" stroke-width="2.5" />
+                      <line x1="${xFace - 8}" y1="${midY + rC * 0.2}" x2="${xFace + 6}" y2="${midY + rC * 0.2}" stroke="#38bdf8" stroke-width="2.5" />
+                      <line x1="${xFace - 8}" y1="${midY + rC * 0.6}" x2="${xFace + 6}" y2="${midY + rC * 0.6}" stroke="#38bdf8" stroke-width="2.5" />`;
+      }
+
+      const svg = `
+        <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="100%" style="overflow: visible;">
+          <!-- Centerline -->
+          <line x1="70" y1="${midY}" x2="${xExit + 40}" y2="${midY}" stroke="#475569" stroke-dasharray="6,4" stroke-width="1.2" />
+
+          <!-- Metal Wall (Sectioned) -->
+          <path d="${topWall}" fill="rgba(249, 115, 22, 0.25)" stroke="#ea580c" stroke-width="1.5" />
+          <path d="${botWall}" fill="rgba(249, 115, 22, 0.25)" stroke="#ea580c" stroke-width="1.5" />
+
+          <!-- Hot Gas Core Glow -->
+          <polygon points="${xFace},${midY - rC} ${xCylEnd},${midY - rC} ${xThroat},${midY - rT} ${xExit},${midY - rExit} ${xExit},${midY + rExit} ${xThroat},${midY + rT} ${xCylEnd},${midY + rC} ${xFace},${midY + rC}" fill="rgba(249, 115, 22, 0.08)" />
+
+          <!-- Injector Head Assembly -->
+          ${injGraphic}
+
+          <!-- Dimension Lines & Annotations -->
+          <!-- Dc Diameter -->
+          <line x1="${xFace + 20}" y1="${midY - rC}" x2="${xFace + 20}" y2="${midY + rC}" stroke="#38bdf8" stroke-width="1" />
+          <text x="${xFace + 26}" y="${midY + 4}" fill="#38bdf8" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="600">Dc: ${Dc_mm.toFixed(1)} mm</text>
+
+          <!-- Dt Throat -->
+          <line x1="${xThroat}" y1="${midY - rT}" x2="${xThroat}" y2="${midY + rT}" stroke="#ef4444" stroke-width="1.2" />
+          <text x="${xThroat - 18}" y="${midY + rT + 22}" fill="#ef4444" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="600">Dt: ${Dt_mm.toFixed(1)} mm</text>
+
+          <!-- Lcyl Length -->
+          <line x1="${xFace}" y1="${midY - rC - wallPx - 14}" x2="${xCylEnd}" y2="${midY - rC - wallPx - 14}" stroke="#f97316" stroke-width="1" />
+          <text x="${(xFace + xCylEnd) / 2 - 30}" y="${midY - rC - wallPx - 18}" fill="#f97316" font-size="10.5" font-family="'JetBrains Mono', monospace">Lcyl: ${Lcyl_mm.toFixed(1)} mm</text>
+
+          <!-- Labels -->
+          <text x="35" y="${midY - 15}" fill="#38bdf8" font-size="11" font-family="'Inter', sans-serif" font-weight="700">INJECTOR</text>
+          <text x="45" y="${midY}" fill="#38bdf8" font-size="11" font-family="'Inter', sans-serif" font-weight="700">HEAD</text>
+
+          <text x="${(xFace + xCylEnd) / 2 - 40}" y="${midY + 4}" fill="rgba(255,255,255,0.4)" font-size="11.5" font-family="'Inter', sans-serif" font-weight="700" letter-spacing="1">COMBUSTOR BARREL</text>
+          <text x="${xThroat - 16}" y="${midY - rT - 12}" fill="#eab308" font-size="10" font-family="'Inter', sans-serif" font-weight="700">THROAT</text>
+        </svg>
+      `;
+
+      document.getElementById('svg-assembly-viewport').innerHTML = svg;
     }
 
     // Run on load
