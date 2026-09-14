@@ -23,6 +23,7 @@ from kryptonis.propulsion_equations.chamber import (
     contraction_ratio,
 )
 from kryptonis.propulsion_equations.combustion import chamber_bulk_residence_time
+from kryptonis.propulsion_equations.regen_channel import RegenCoolingJacket
 from kryptonis.propulsion_equations.chamber_acoustics import (
     first_tangential_frequency,
     first_radial_frequency,
@@ -329,14 +330,102 @@ def run_injector_sizing(
     return 0
 
 
+def run_cooling_sizing(
+    thrust_n: float,
+    pc_bar: float,
+    propellants: str = "LOX/RP-1",
+    n_channels: int = 80,
+    channel_height_mm: float = 1.8,
+    fin_thickness_mm: float = 0.8,
+    wall_thickness_mm: float = 1.5,
+    liner_material: str = "CuCrZr",
+) -> int:
+    pc_pa = pc_bar * 1.0e5
+    norm_prop = propellants.upper().replace("METHANE", "CH4").replace("KEROSENE", "RP-1")
+
+    prop_specs = {
+        "LOX/RP-1": {"c_star": 1780.0, "gamma": 1.22, "tc": 3600.0, "isp": 285.0, "of": 2.6, "coolant": "RP-1"},
+        "LOX/CH4": {"c_star": 1820.0, "gamma": 1.20, "tc": 3450.0, "isp": 295.0, "of": 3.5, "coolant": "CH4"},
+        "LOX/LH2": {"c_star": 2350.0, "gamma": 1.23, "tc": 3250.0, "isp": 390.0, "of": 6.0, "coolant": "LH2"},
+    }
+    spec = prop_specs.get(norm_prop, prop_specs["LOX/RP-1"])
+
+    cf_est = 1.75
+    at = thrust_n / (pc_pa * cf_est)
+    dt = math.sqrt(4.0 * at / math.pi)
+    cr = 1.25 + 8.0 * (dt ** -0.6)
+    dc = dt * math.sqrt(cr)
+    ac = at * cr
+    vc = 1.0 * at
+    conv_rad = math.radians(30.0)
+    lconv = (dc - dt) / (2.0 * math.tan(conv_rad))
+    vconv = (math.pi / (24.0 * math.tan(conv_rad))) * (dc**3 - dt**3)
+    lcyl = max((vc - vconv) / ac, 0.04)
+    lc = lcyl + lconv
+
+    mdot = thrust_n / (spec["isp"] * 9.80665)
+    mdot_f = mdot / (1.0 + spec["of"])
+
+    t_aw = spec["tc"] * (1.0 + 0.85 * ((spec["gamma"] - 1.0) / 2.0)) / (1.0 + (spec["gamma"] - 1.0) / 2.0)
+    h_g = 0.026 * (pc_pa ** 0.8) / (dt ** 0.2) * 0.025
+
+    jacket = RegenCoolingJacket(
+        throat_diameter_m=dt,
+        chamber_diameter_m=dc,
+        chamber_length_m=lc,
+        mass_flow_coolant_kg_s=mdot_f,
+        chamber_pressure_pa=pc_pa,
+        gas_recovery_temp_k=t_aw,
+        gas_throat_htc_w_m2k=h_g,
+        n_channels=n_channels,
+        channel_height_m=channel_height_mm * 1e-3,
+        fin_thickness_m=fin_thickness_mm * 1e-3,
+        wall_thickness_m=wall_thickness_mm * 1e-3,
+        coolant_type=spec["coolant"],
+        liner_material=liner_material,
+    )
+    res = jacket.solve()
+
+    print("=" * 78)
+    print(f"NAVRONIS PROPULSION -- REGENERATIVE COOLING REPORT (DAY 3)")
+    print(f"Propellant: {norm_prop} | Thrust: {thrust_n/1e3:.1f} kN | Pc: {pc_bar:.1f} bar | Liner: {liner_material}")
+    print("=" * 78)
+    print(f"Coolant Mass Flow:         {mdot_f:.3f} kg/s ({spec['coolant']})")
+    print(f"Channels Count:            {res.n_channels} milled channels")
+    print("-" * 78)
+    print(f"Throat Channel Width (wc): {res.channel_width_mm:.3f} mm")
+    print(f"Channel Height (hc):       {res.channel_height_mm:.3f} mm")
+    print(f"Channel Aspect Ratio (AR): {res.aspect_ratio:.2f}")
+    print(f"Hydraulic Diameter (Dh):   {res.hydraulic_diameter_mm:.3f} mm")
+    print(f"Liner Wall Thickness (tw): {res.wall_thickness_mm:.3f} mm")
+    print("-" * 78)
+    print(f"Coolant Velocity (vc):     {res.coolant_velocity_m_s:.1f} m/s")
+    print(f"Reynolds Number (Re):      {res.reynolds_number:.0f} (Fully Turbulent)")
+    print(f"Friction Factor (f):       {res.friction_factor:.4f} (Haaland 1983)")
+    print(f"Coolant Base HTC (hc):     {res.coolant_htc_W_m2K:.1f} W/m²-K (Gnielinski 1976)")
+    print(f"Fin Efficiency:            {res.fin_efficiency*100:.1f}%")
+    print(f"Enhanced Effective HTC:    {res.enhanced_coolant_htc_W_m2K:.1f} W/m²-K")
+    print("-" * 78)
+    print(f"Hot-Gas Wall Temp (Twg):   {res.hot_gas_wall_temp_K:.1f} K ({res.hot_gas_wall_temp_K - 273.15:.1f} °C)")
+    print(f"Coolant Wall Temp (Twc):   {res.coolant_wall_temp_K:.1f} K ({res.coolant_wall_temp_K - 273.15:.1f} °C)")
+    print(f"Peak Throat Heat Flux (q): {res.peak_heat_flux_MW_m2:.2f} MW/m²")
+    print(f"Coolant Delta P:           {res.coolant_pressure_drop_bar:.2f} bar")
+    print(f"Coolant Bulk Temp Rise:    {res.coolant_temp_rise_K:.1f} K")
+    print(f"Thermal Compressive Stress:{res.thermal_stress_MPa:.1f} MPa")
+    print(f"Yield Safety Margin (MS):  {res.yield_safety_margin:.2f} ({'PASS' if res.yield_safety_margin >= 0 else 'WARNING'})")
+    print(f"Thermal/Boiling Margin:    {'PASS (Below thermal limit)' if res.boiling_margin_adequate else 'FAIL (Exceeds limit)'}")
+    print("=" * 78)
+    return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="navronis",
         description="Authority-controlled analytical sizing for liquid rocket engine thrust chambers and injectors.",
     )
     parser.add_argument(
-        "--subsystem", default="chamber", choices=["chamber", "injector"],
-        help="Subsystem to size: 'chamber' or 'injector'",
+        "--subsystem", default="chamber", choices=["chamber", "injector", "cooling", "regen"],
+        help="Subsystem to size: 'chamber', 'injector', or 'cooling'",
     )
     parser.add_argument(
         "--injector-type", default="coaxial", choices=["coaxial", "swirl", "pintle", "impinging"],
@@ -349,6 +438,27 @@ def main() -> None:
     parser.add_argument(
         "--delta-p-ratio", type=float, default=0.20,
         help="Injector pressure drop ratio delta_p / Pc (default: 0.20 = 20%)",
+    )
+    parser.add_argument(
+        "--channels", type=int, default=80,
+        help="Number of milled cooling channels around chamber perimeter (default: 80)",
+    )
+    parser.add_argument(
+        "--channel-height", type=float, default=1.8,
+        help="Milled cooling channel depth in mm (default: 1.8 mm)",
+    )
+    parser.add_argument(
+        "--fin-thickness", type=float, default=0.8,
+        help="Rib fin width between cooling channels in mm (default: 0.8 mm)",
+    )
+    parser.add_argument(
+        "--wall-thickness", type=float, default=1.5,
+        help="Liner hot-wall thickness in mm (default: 1.5 mm)",
+    )
+    parser.add_argument(
+        "--liner-material", default="CuCrZr",
+        choices=["CuCrZr", "GRCop-42", "OFHC", "Inconel-718"],
+        help="Liner alloy material (default: CuCrZr)",
     )
     parser.add_argument(
         "--thrust", "-t", type=float, default=30000.0,
@@ -411,6 +521,20 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+
+    if args.subsystem in {"cooling", "regen"}:
+        sys.exit(
+            run_cooling_sizing(
+                thrust_n=args.thrust,
+                pc_bar=args.pc,
+                propellants=args.propellants,
+                n_channels=args.channels,
+                channel_height_mm=args.channel_height,
+                fin_thickness_mm=args.fin_thickness,
+                wall_thickness_mm=args.wall_thickness,
+                liner_material=args.liner_material,
+            )
+        )
 
     if args.subsystem == "injector":
         sys.exit(

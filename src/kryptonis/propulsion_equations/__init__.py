@@ -98,6 +98,11 @@ from kryptonis.propulsion_equations.combustor import (
     CombustorResult,
 )
 
+from kryptonis.propulsion_equations.regen_channel import (
+    RegenCoolingJacket,
+    RegenChannelResult,
+)
+
 from kryptonis.propulsion_equations.injector import (
     orifice_area,
     orifice_diameter,
@@ -111,7 +116,7 @@ from kryptonis.propulsion_equations.injector import (
     ShearCoaxialElement,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = [
     # Units & result containers
     "Result", "Status", "EvidenceLevel", "Verification", "Validation", "Assumption",
@@ -145,4 +150,6 @@ __all__ = [
     "injector_pressure_drop_stiffness", "size_shear_coaxial",
     "size_swirl_coaxial", "size_pintle_injector", "size_impinging_doublet",
     "InjectorDesign", "ShearCoaxialElement",
+    # Day 3: Regenerative Cooling Jacket API
+    "RegenCoolingJacket", "RegenChannelResult",
 ]
