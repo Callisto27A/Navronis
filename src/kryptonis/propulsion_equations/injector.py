@@ -268,6 +268,126 @@ def size_swirl_coaxial(
     }
 
 
+
+# --------------------------------------------------------------------------
+# NEW: Bi-Centrifugal (Liquid-Liquid) Swirl Coaxial Injector Sizing
+# --------------------------------------------------------------------------
+
+import math
+from scipy.optimize import brentq
+
+def abramovich_phi_from_A(A):
+    """
+    Solves Abramovich's equation for liquid film fullness coefficient phi given characteristic parameter A:
+    A = (1 - phi) * sqrt(2) / (phi * sqrt(phi))
+    """
+    def obj(phi):
+        return (1.0 - phi) * math.sqrt(2.0) - A * phi * math.sqrt(phi)
+    
+    # phi must be in (0, 1)
+    phi_sol = brentq(obj, 1e-6, 0.999999)
+    return phi_sol
+
+def abramovich_mu_from_phi(phi):
+    """
+    Calculates discharge coefficient mu from phi using Abramovich inviscid formula:
+    mu = phi * sqrt(phi / (2 - phi))
+    """
+    return phi * math.sqrt(phi / (2.0 - phi))
+
+def calculate_coaxial_swirl_injector(
+    m_dot_inner,       # LOX mass flow rate (kg/s)
+    delta_p_inner,     # LOX pressure drop (Pa)
+    m_dot_outer,       # RP-1 mass flow rate (kg/s)
+    delta_p_outer,     # RP-1 pressure drop (Pa)
+    rho_inner=1141.0,  # LOX density (kg/m^3)
+    rho_outer=810.0,   # RP-1 density (kg/m^3)
+    A_inner=3.0,       # Inner stage Abramovich parameter A1
+    A_outer=3.0,       # Outer stage Abramovich parameter A2
+    t_wall=0.001       # Inner nozzle wall thickness (m)
+):
+    """
+    Calculates coaxial swirl injector geometry based strictly on Abramovich Swirl Injector Theory.
+    
+    Parameters:
+    - m_dot_inner: Mass flow rate for inner stage (kg/s)
+    - delta_p_inner: Injection pressure drop for inner stage (Pa)
+    - m_dot_outer: Mass flow rate for outer stage (kg/s)
+    - delta_p_outer: Injection pressure drop for outer stage (Pa)
+    - rho_inner: Fluid density for inner stage (kg/m^3)
+    - rho_outer: Fluid density for outer stage (kg/m^3)
+    - A_inner: Abramovich geometric characteristic parameter for inner stage
+    - A_outer: Abramovich geometric characteristic parameter for outer stage
+    - t_wall: Wall thickness between inner nozzle outer boundary and outer annular channel (m)
+    
+    Returns:
+    - Dictionary with stage flow parameters, Abramovich coefficients (phi, mu), nozzle radii (m & mm), and smd_um placeholder.
+    """
+    # Step 1: Abramovich theory for Inner Stage (LOX)
+    phi_inner = abramovich_phi_from_A(A_inner)
+    mu_inner = abramovich_mu_from_phi(phi_inner)
+    
+    # Area needed for inner nozzle: m_dot_1 = mu_1 * A_n1 * sqrt(2 * rho_1 * delta_p_1)
+    A_n1 = m_dot_inner / (mu_inner * math.sqrt(2.0 * rho_inner * delta_p_inner))
+    R_n1 = math.sqrt(A_n1 / math.pi)  # Inner nozzle orifice radius (m)
+    
+    # Step 2: Abramovich theory for Outer Stage (RP-1)
+    phi_outer = abramovich_phi_from_A(A_outer)
+    mu_outer = abramovich_mu_from_phi(phi_outer)
+    
+    # Flow area needed for outer annular nozzle: m_dot_2 = mu_2 * A_n2 * sqrt(2 * rho_2 * delta_p_2)
+    A_n2 = m_dot_outer / (mu_outer * math.sqrt(2.0 * rho_outer * delta_p_outer))
+    
+    # Inner wall outer radius
+    R_wall_out = R_n1 + t_wall
+    
+    # Outer nozzle radius R_n2 where A_n2 = pi * (R_n2^2 - R_wall_out^2)
+    R_n2 = math.sqrt(R_wall_out**2 + (A_n2 / math.pi))  # Outer nozzle orifice radius (m)
+    
+    # Step 3: Placeholder for empirical SMD correlation
+    smd_um = None # TODO: Insert empirical correlation
+    
+    return {
+        "inner_stage": {
+            "m_dot_kg_s": m_dot_inner,
+            "delta_p_Pa": delta_p_inner,
+            "rho_kg_m3": rho_inner,
+            "A_characteristic": A_inner,
+            "phi_fullness": phi_inner,
+            "phi_fillness": phi_inner,
+            "mu_discharge": mu_inner,
+            "A_n1_m2": A_n1,
+            "R_n1_m": R_n1,
+            "R_n1_mm": R_n1 * 1000.0
+        },
+        "outer_stage": {
+            "m_dot_kg_s": m_dot_outer,
+            "delta_p_Pa": delta_p_outer,
+            "rho_kg_m3": rho_outer,
+            "A_characteristic": A_outer,
+            "phi_fullness": phi_outer,
+            "phi_fillness": phi_outer,
+            "mu_discharge": mu_outer,
+            "A_n2_m2": A_n2,
+            "R_n2_m": R_n2,
+            "R_n2_mm": R_n2 * 1000.0
+        },
+        "smd_um": smd_um
+    }
+
+# Quick test
+if __name__ == "__main__":
+    # Test values: LOX m_dot = 0.5 kg/s, dP = 0.5 MPa; RP-1 m_dot = 0.2 kg/s, dP = 0.4 MPa
+    res = calculate_coaxial_swirl_injector(
+        m_dot_inner=0.5,
+        delta_p_inner=0.5e6,
+        m_dot_outer=0.2,
+        delta_p_outer=0.4e6
+    )
+    import json
+    print(json.dumps(res, indent=2))
+
+
 # --------------------------------------------------------------------------
 # 4. Pintle Injector Sizing (Merlin, Starship, Apollo LMDE Style)
 # --------------------------------------------------------------------------
