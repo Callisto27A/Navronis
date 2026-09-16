@@ -56,9 +56,24 @@ def run_chamber_sizing(
         "LOX/RP-1": {"gamma": 1.22, "mw": 0.0235, "tc": 3600.0, "l_star": 1.05, "c_star": 1780.0},
         "LOX/CH4": {"gamma": 1.20, "mw": 0.0220, "tc": 3450.0, "l_star": 1.00, "c_star": 1820.0},
         "LOX/LH2": {"gamma": 1.23, "mw": 0.0150, "tc": 3250.0, "l_star": 0.85, "c_star": 2350.0},
+        "N2O4/MMH": {"gamma": 1.25, "mw": 0.0218, "tc": 3150.0, "l_star": 0.83, "c_star": 1740.0},
+        "HYDRAZINE": {"gamma": 1.28, "mw": 0.0130, "tc": 1200.0, "l_star": 0.75, "c_star": 1340.0},
+        "N2O/ETHANOL": {"gamma": 1.22, "mw": 0.0245, "tc": 2900.0, "l_star": 1.15, "c_star": 1630.0},
     }
 
-    norm_prop = propellants.upper().replace("METHANE", "CH4").replace("KEROSENE", "RP-1")
+    norm_prop = (
+        propellants.upper()
+        .replace("METHANE", "CH4")
+        .replace("KEROSENE", "RP-1")
+        .replace("-", "/")
+        .replace("NTO/MMH", "N2O4/MMH")
+        .replace("N2H4", "HYDRAZINE")
+        .replace("N2O/ETOH", "N2O/ETHANOL")
+    )
+    if norm_prop in {"MMH", "AEROZINE50"}:
+        norm_prop = "N2O4/MMH"
+    elif norm_prop in {"MONOPROPELLANT_HYDRAZINE"}:
+        norm_prop = "HYDRAZINE"
     defaults = prop_defaults.get(norm_prop, prop_defaults["LOX/RP-1"])
 
     gamma = defaults["gamma"]
@@ -254,8 +269,23 @@ def run_injector_sizing(
         "LOX/CH4": {"rho_ox": 1141.0, "rho_f": 422.0, "isp": 295.0, "of": 3.5},
         "LOX/RP-1": {"rho_ox": 1141.0, "rho_f": 810.0, "isp": 285.0, "of": 2.6},
         "LOX/LH2": {"rho_ox": 1141.0, "rho_f": 71.0, "isp": 390.0, "of": 6.0},
+        "N2O4/MMH": {"rho_ox": 1442.0, "rho_f": 875.0, "isp": 285.0, "of": 1.65},
+        "HYDRAZINE": {"rho_ox": 1004.0, "rho_f": 1004.0, "isp": 220.0, "of": 0.0},
+        "N2O/ETHANOL": {"rho_ox": 1220.0, "rho_f": 789.0, "isp": 260.0, "of": 4.5},
     }
-    norm = propellants.upper().replace("METHANE", "CH4").replace("KEROSENE", "RP-1")
+    norm = (
+        propellants.upper()
+        .replace("METHANE", "CH4")
+        .replace("KEROSENE", "RP-1")
+        .replace("-", "/")
+        .replace("NTO/MMH", "N2O4/MMH")
+        .replace("N2H4", "HYDRAZINE")
+        .replace("N2O/ETOH", "N2O/ETHANOL")
+    )
+    if norm in {"MMH", "AEROZINE50"}:
+        norm = "N2O4/MMH"
+    elif norm in {"MONOPROPELLANT_HYDRAZINE"}:
+        norm = "HYDRAZINE"
     pinfo = prop_table.get(norm, prop_table["LOX/CH4"])
 
     # Mass flow estimate: m_dot = Thrust / (Isp * 9.80665)
@@ -341,12 +371,27 @@ def run_cooling_sizing(
     liner_material: str = "CuCrZr",
 ) -> int:
     pc_pa = pc_bar * 1.0e5
-    norm_prop = propellants.upper().replace("METHANE", "CH4").replace("KEROSENE", "RP-1")
+    norm_prop = (
+        propellants.upper()
+        .replace("METHANE", "CH4")
+        .replace("KEROSENE", "RP-1")
+        .replace("-", "/")
+        .replace("NTO/MMH", "N2O4/MMH")
+        .replace("N2H4", "HYDRAZINE")
+        .replace("N2O/ETOH", "N2O/ETHANOL")
+    )
+    if norm_prop in {"MMH", "AEROZINE50"}:
+        norm_prop = "N2O4/MMH"
+    elif norm_prop in {"MONOPROPELLANT_HYDRAZINE"}:
+        norm_prop = "HYDRAZINE"
 
     prop_specs = {
         "LOX/RP-1": {"c_star": 1780.0, "gamma": 1.22, "tc": 3600.0, "isp": 285.0, "of": 2.6, "coolant": "RP-1"},
         "LOX/CH4": {"c_star": 1820.0, "gamma": 1.20, "tc": 3450.0, "isp": 295.0, "of": 3.5, "coolant": "CH4"},
         "LOX/LH2": {"c_star": 2350.0, "gamma": 1.23, "tc": 3250.0, "isp": 390.0, "of": 6.0, "coolant": "LH2"},
+        "N2O4/MMH": {"c_star": 1740.0, "gamma": 1.25, "tc": 3150.0, "isp": 285.0, "of": 1.65, "coolant": "MMH"},
+        "HYDRAZINE": {"c_star": 1340.0, "gamma": 1.28, "tc": 1200.0, "isp": 220.0, "of": 0.0, "coolant": "N2H4"},
+        "N2O/ETHANOL": {"c_star": 1630.0, "gamma": 1.22, "tc": 2900.0, "isp": 260.0, "of": 4.5, "coolant": "ETHANOL"},
     }
     spec = prop_specs.get(norm_prop, prop_specs["LOX/RP-1"])
 
@@ -470,7 +515,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--propellants", default="LOX/RP-1",
-        choices=["LOX/RP-1", "LOX/CH4", "LOX/LH2"],
+        choices=["LOX/RP-1", "LOX/CH4", "LOX/LH2", "N2O4/MMH", "HYDRAZINE", "N2O/ETHANOL"],
         help="Propellant combination (default: LOX/RP-1)",
     )
     parser.add_argument(

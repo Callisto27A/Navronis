@@ -122,3 +122,77 @@ def test_residence_time():
     assert tau.status == Status.PASS
     expected_tau = (Vc * rho_gas) / mdot
     assert pytest.approx(tau.value, rel=1e-6) == expected_tau
+
+
+def test_storable_propellant_l_star_mappings():
+    """Verify L* resolution for storable/hypergolic fuels according to SP-125 Table 4-1."""
+    from kryptonis.propulsion_equations.chamber import characteristic_length
+
+    # MMH and N2H4 map onto N2O4/hydrazine-base (30-35 inches -> midpoint 32.5 in = 0.8255 m)
+    res_mmh = characteristic_length(fuel="MMH")
+    assert res_mmh.status == Status.UNVALIDATED_ASSUMPTION
+    assert pytest.approx(res_mmh.value, rel=1e-4) == 32.5 * 0.0254
+
+    res_n2h4 = characteristic_length(fuel="N2H4")
+    assert res_n2h4.status == Status.UNVALIDATED_ASSUMPTION
+    assert pytest.approx(res_n2h4.value, rel=1e-4) == 32.5 * 0.0254
+
+    # Ethanol has no SP-125 Table 4-1 row, must return INSUFFICIENT_EVIDENCE
+    res_eth = characteristic_length(fuel="ETHANOL")
+    assert res_eth.status == Status.INSUFFICIENT_EVIDENCE
+    assert math.isnan(res_eth.value)
+    assert "ETHANOL" in res_eth.notes
+
+
+def test_storable_propellants_combustor_design():
+    """Verify closed-form analytical sizing with N2O4/MMH, Hydrazine, and N2O/Ethanol."""
+    from kryptonis.propulsion_equations.combustor import CombustorDesign
+
+    # 1. N2O4 / MMH Hypergolic in-space / RCS engine
+    des_mmh = CombustorDesign(
+        thrust=10000.0,
+        chamber_pressure=15.0e5,
+        mixture_ratio=1.65,
+        propellant="N2O4/MMH",
+    )
+    res_mmh = des_mmh.solve()
+    assert res_mmh.throat_diameter > 0.0
+    assert res_mmh.chamber_diameter > res_mmh.throat_diameter
+    assert 1600.0 <= res_mmh.c_star_ideal <= 1850.0
+    assert pytest.approx(res_mmh.design.mixture_ratio, rel=1e-4) == 1.65
+
+    # 2. Monopropellant Hydrazine catalytic thruster (Tc ~ 1200 K)
+    des_n2h4 = CombustorDesign(
+        thrust=500.0,
+        chamber_pressure=10.0e5,
+        mixture_ratio=0.0,
+        propellant="HYDRAZINE",
+    )
+    res_n2h4 = des_n2h4.solve()
+    assert res_n2h4.throat_diameter > 0.0
+    assert 1200.0 <= res_n2h4.c_star_ideal <= 1450.0
+    assert res_n2h4.oxidizer_mass_flow == 0.0
+    assert res_n2h4.fuel_mass_flow > 0.0
+
+    # 3. Green storable N2O / Ethanol thruster
+    des_green = CombustorDesign(
+        thrust=5000.0,
+        chamber_pressure=25.0e5,
+        mixture_ratio=4.5,
+        propellant="N2O/ETHANOL",
+    )
+    res_green = des_green.solve()
+    assert res_green.throat_diameter > 0.0
+    assert 1500.0 <= res_green.c_star_ideal <= 1750.0
+
+
+def test_storable_propellants_cli_injector_sizing():
+    """Verify injector sizing CLI handler accepts storable propellants."""
+    from kryptonis.propulsion_equations.cli import run_injector_sizing
+
+    ret_mmh = run_injector_sizing(thrust_n=4000.0, pc_bar=15.0, propellants="N2O4/MMH", injector_type="swirl")
+    assert ret_mmh == 0
+
+    ret_green = run_injector_sizing(thrust_n=3000.0, pc_bar=20.0, propellants="N2O/ETHANOL", injector_type="pintle")
+    assert ret_green == 0
+

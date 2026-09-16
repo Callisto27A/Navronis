@@ -157,6 +157,12 @@ _FUEL_TO_TABLE_ROW: dict[str, str | None] = {
     "LH2": "LOX/LH2 (LH2 injection)",
     "LCH4": None,          # NO ROW EXISTS
     "GCH4": None,          # NO ROW EXISTS
+    "MMH": "N2O4/hydrazine-base",
+    "N2O4/MMH": "N2O4/hydrazine-base",
+    "HYDRAZINE": "N2O4/hydrazine-base",
+    "N2H4": "N2O4/hydrazine-base",
+    "ETHANOL": None,       # NO ROW EXISTS in SP-125 Table 4-1
+    "N2O/ETHANOL": None,   # NO ROW EXISTS in SP-125 Table 4-1
 }
 
 
@@ -298,17 +304,17 @@ def characteristic_length(
                                 f"guessed: it sets chamber volume, length and "
                                 f"residence time.")
         if row is None:
-            # Methane. There is no row. Do NOT invent one.
+            # Propellant with no SP-125 Table 4-1 row (e.g., Methane, Ethanol). Do NOT invent one.
             return Result(
                 float("nan"), "m", "CAN-L-STAR",
                 status=Status.INSUFFICIENT_EVIDENCE, source=SP125,
                 source_locator="Table 4-1, p.87",
                 evidence_level=EvidenceLevel.E0,
                 validity_domain=f"Table 4-1 envelope {L_STAR_ENVELOPE_IN} in",
-                notes=(f"SP-125 Table 4-1 has NO METHANE ROW -- verified by "
+                notes=(f"SP-125 Table 4-1 has NO {fuel!r} ROW -- verified by "
                        f"listing all 11 propellant combinations. {fuel!r} is "
                        f"therefore not covered by the cited source. Supply "
-                       f"L* explicitly, or acquire a LOX/CH4 source."),
+                       f"L* explicitly, or acquire a {fuel!r} source."),
                 inputs={"fuel": fuel})
         lo_in, hi_in = L_STAR_TABLE_4_1[row]
         mid_in = 0.5 * (lo_in + hi_in)

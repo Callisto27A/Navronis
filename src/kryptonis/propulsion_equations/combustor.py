@@ -78,12 +78,27 @@ class CombustorDesign:
 
     def solve(self) -> "CombustorResult":
         """Execute the closed-form analytical sizing sequence."""
-        norm_prop = self.propellant.upper().replace("LCH4", "CH4").replace("KEROSENE", "RP-1")
-        
+        norm_prop = (
+            self.propellant.upper()
+            .replace("LCH4", "CH4")
+            .replace("KEROSENE", "RP-1")
+            .replace("-", "/")
+            .replace("NTO/MMH", "N2O4/MMH")
+            .replace("N2H4", "HYDRAZINE")
+            .replace("N2O/ETOH", "N2O/ETHANOL")
+        )
+        if norm_prop in {"MMH", "AEROZINE50"}:
+            norm_prop = "N2O4/MMH"
+        elif norm_prop in {"MONOPROPELLANT_HYDRAZINE"}:
+            norm_prop = "HYDRAZINE"
+
         prop_defaults = {
             "LOX/RP-1": {"gamma": 1.22, "mw": 0.0235, "tc": 3600.0, "l_star": 1.05, "c_star": 1780.0},
             "LOX/CH4": {"gamma": 1.20, "mw": 0.0220, "tc": 3450.0, "l_star": 1.00, "c_star": 1820.0},
             "LOX/LH2": {"gamma": 1.23, "mw": 0.0150, "tc": 3250.0, "l_star": 0.85, "c_star": 2350.0},
+            "N2O4/MMH": {"gamma": 1.25, "mw": 0.0218, "tc": 3150.0, "l_star": 0.83, "c_star": 1740.0},
+            "HYDRAZINE": {"gamma": 1.28, "mw": 0.0130, "tc": 1200.0, "l_star": 0.75, "c_star": 1340.0},
+            "N2O/ETHANOL": {"gamma": 1.22, "mw": 0.0245, "tc": 2900.0, "l_star": 1.15, "c_star": 1630.0},
         }
         defaults = prop_defaults.get(norm_prop, prop_defaults["LOX/CH4"])
 
