@@ -109,6 +109,8 @@ def size_shear_coaxial(
     post_recess_ratio: float = 1.5,       # L_recess / D_post_id
     surface_tension_ox: float = 0.013,    # N/m (liquid oxygen at ~90K)
     viscosity_ox: float = 1.9e-4,         # Pa*s
+    phase_ox: str = "liquid",
+    phase_fuel: str = "gas",
 ) -> Dict[str, Any]:
     """Size an array of shear coaxial injector elements with atomization SMD.
     
@@ -122,12 +124,12 @@ def size_shear_coaxial(
     m_ox_elem = m_dot_ox / n_elements
     m_f_elem = m_dot_fuel / n_elements
 
-    # Central liquid post area & diameter
+    # Central inner post area & diameter
     a_ox = orifice_area(m_ox_elem, cd_ox, rho_ox, delta_p_ox)
     d_ox_id = orifice_diameter(a_ox)
     d_ox_od = d_ox_id + 2.0 * post_wall_thickness
 
-    # Gas annular area
+    # Outer annular area
     a_fuel = orifice_area(m_f_elem, cd_fuel, rho_fuel, delta_p_fuel)
     # a_fuel = pi/4 * (d_ann_id^2 - d_ox_od^2) => d_ann_id = sqrt(d_ox_od^2 + 4 * a_fuel / pi)
     d_ann_id = math.sqrt(d_ox_od**2 + (4.0 * a_fuel / math.pi))
@@ -136,7 +138,7 @@ def size_shear_coaxial(
     v_ox = m_ox_elem / (rho_ox * a_ox)
     v_fuel = m_f_elem / (rho_fuel * a_fuel)
 
-    # Momentum flux ratio J = (rho_g * V_g^2) / (rho_l * V_l^2)
+    # Momentum flux ratio J = (rho_outer * V_outer^2) / (rho_inner * V_inner^2)
     dyn_pres_fuel = rho_fuel * (v_fuel**2)
     dyn_pres_ox = rho_ox * (v_ox**2)
     J = dyn_pres_fuel / dyn_pres_ox
@@ -145,16 +147,20 @@ def size_shear_coaxial(
     # Recess length
     recess_length = post_recess_ratio * d_ox_id
 
-    # Sauter Mean Diameter D32 via Lorenzetto-Lefebvre correlation
-    # We_g = rho_g * (V_g - V_l)^2 * D_l / sigma
-    rel_v = max(v_fuel - v_ox, 10.0)
-    we_g = (rho_fuel * (rel_v**2) * d_ox_id) / surface_tension_ox
-    oh = viscosity_ox / math.sqrt(rho_ox * surface_tension_ox * d_ox_id)
-    
-    # SMD formula (um)
-    smd_m = d_ox_id * 0.48 * (1.0 / max(we_g, 1.0))**0.4 * (1.0 + 1.0 / max(velocity_ratio, 1.0))**0.4 \
-            + 0.15 * d_ox_id * (oh**0.5)
-    smd_um = smd_m * 1.0e6
+    # Atomization / droplet SMD check
+    is_gas_gas = (phase_ox.lower().strip() == "gas") and (phase_fuel.lower().strip() == "gas")
+    if is_gas_gas:
+        smd_um = None
+        atomization_source = "N/A (Single-phase gas/gas turbulent shear layer mixing; no liquid droplets)"
+    else:
+        # Sauter Mean Diameter D32 via Lorenzetto-Lefebvre correlation
+        rel_v = max(v_fuel - v_ox, 10.0)
+        we_g = (rho_fuel * (rel_v**2) * d_ox_id) / surface_tension_ox
+        oh = viscosity_ox / math.sqrt(rho_ox * surface_tension_ox * d_ox_id)
+        smd_m = d_ox_id * 0.48 * (1.0 / max(we_g, 1.0))**0.4 * (1.0 + 1.0 / max(velocity_ratio, 1.0))**0.4 \
+                + 0.15 * d_ox_id * (oh**0.5)
+        smd_um = smd_m * 1.0e6
+        atomization_source = CITATIONS["coaxial_atomization"]
 
     return {
         "n_elements": n_elements,
@@ -170,9 +176,11 @@ def size_shear_coaxial(
         "velocity_ratio_VR": velocity_ratio,
         "recess_length_mm": recess_length * 1e3,
         "smd_um": smd_um,
+        "phase_ox": phase_ox,
+        "phase_fuel": phase_fuel,
         "provenance": {
             "sizing": CITATIONS["shear_coaxial"],
-            "atomization": CITATIONS["coaxial_atomization"],
+            "atomization": atomization_source,
         }
     }
 
@@ -464,6 +472,8 @@ class InjectorDesign:
     pintle_diameter: float = 0.022
     cd_ox: float = 0.75
     cd_fuel: float = 0.80
+    phase_ox: str = "liquid"
+    phase_fuel: str = "gas"
 
     def solve(self) -> Dict[str, Any]:
         """Execute closed-form injector sizing and atomization evaluation."""
@@ -489,17 +499,38 @@ class InjectorDesign:
                 cd_ox=self.cd_ox,
                 cd_fuel=self.cd_fuel,
                 n_elements=self.n_elements,
+                phase_ox=self.phase_ox,
+                phase_fuel=self.phase_fuel,
             )
+            if self.phase_ox.lower().strip() == "gas" and self.phase_fuel.lower().strip() == "gas":
+                res["phase_regime"] = "gas_gas (Raptor full-flow staged combustion)"
+            else:
+                res["phase_regime"] = "gas_liquid"
         elif t_type in {"swirl", "swirl_coaxial", "centrifugal"}:
-            res = size_swirl_coaxial(
-                m_dot_liquid=self.mass_flow_ox,
-                m_dot_gas=self.mass_flow_fuel,
-                rho_liquid=self.rho_ox,
-                rho_gas=self.rho_fuel,
-                delta_p_liquid=delta_p_ox,
-                delta_p_gas=delta_p_fuel,
-                n_elements=self.n_elements,
-            )
+            if self.phase_ox.lower().strip() == "gas" and self.phase_fuel.lower().strip() == "liquid":
+                # RD-180 / Oxygen-rich staged combustion: Oxidizer is GOX (gas), Fuel is RP-1 (liquid)
+                res = size_swirl_coaxial(
+                    m_dot_liquid=self.mass_flow_fuel,
+                    m_dot_gas=self.mass_flow_ox,
+                    rho_liquid=self.rho_fuel,
+                    rho_gas=self.rho_ox,
+                    delta_p_liquid=delta_p_fuel,
+                    delta_p_gas=delta_p_ox,
+                    n_elements=self.n_elements,
+                )
+                res["phase_regime"] = "gas_ox_liquid_fuel (RD-180 staged combustion)"
+            else:
+                # Standard LOX/Gas-fuel swirl coaxial (e.g. NK-33, RD-170)
+                res = size_swirl_coaxial(
+                    m_dot_liquid=self.mass_flow_ox,
+                    m_dot_gas=self.mass_flow_fuel,
+                    rho_liquid=self.rho_ox,
+                    rho_gas=self.rho_fuel,
+                    delta_p_liquid=delta_p_ox,
+                    delta_p_gas=delta_p_fuel,
+                    n_elements=self.n_elements,
+                )
+                res["phase_regime"] = "liquid_ox_gas_fuel"
         elif t_type in {"pintle", "pintle_injector"}:
             # Standard arrangement: Fuel annular (outer), Oxidizer radial (inner)
             res = size_pintle_injector(
@@ -537,4 +568,6 @@ class InjectorDesign:
         res["delta_p_ratio"] = self.delta_p_ratio
         res["delta_p_bar"] = delta_p_ox / 1e5
         res["chugging_margin_adequate"] = self.delta_p_ratio >= 0.15
+        res["phase_ox"] = self.phase_ox
+        res["phase_fuel"] = self.phase_fuel
         return res

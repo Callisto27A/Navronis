@@ -264,3 +264,48 @@ def test_injector_design_facade():
             rho_fuel=422.0,
             delta_p_ratio=0.02, # dangerously low
         ).solve()
+
+
+def test_injector_phase_decoupling_rd180_and_raptor():
+    """Verify phase decoupling addressing Issue #7:
+    1. RD-180 (Oxygen-rich staged combustion): GOX (gas) + RP-1 (liquid) swirl coaxial.
+    2. Raptor (Full-flow staged combustion): GOX (gas) + GCH4 (gas) shear coaxial.
+    """
+    # 1. RD-180: Gas Oxidizer + Liquid Fuel
+    rd180 = InjectorDesign(
+        injector_type="swirl",
+        chamber_pressure=260.0e5,  # 260 bar
+        mass_flow_ox=30.0,
+        mass_flow_fuel=11.0,
+        rho_ox=85.0,     # High-pressure hot GOX ~ 85 kg/m3
+        rho_fuel=810.0,  # Liquid RP-1 ~ 810 kg/m3
+        phase_ox="gas",
+        phase_fuel="liquid",
+        delta_p_ratio=0.18,
+        n_elements=37,
+    ).solve()
+    assert rd180["phase_ox"] == "gas"
+    assert rd180["phase_fuel"] == "liquid"
+    assert "RD-180" in rd180["phase_regime"]
+    assert rd180["liquid_film_thickness_mm"] > 0.0
+
+    # 2. Raptor: Gas Oxidizer + Gas Fuel (FFSC)
+    raptor = InjectorDesign(
+        injector_type="coaxial",
+        chamber_pressure=300.0e5,  # 300 bar
+        mass_flow_ox=25.0,
+        mass_flow_fuel=7.0,
+        rho_ox=120.0,    # High-pressure GOX from ox preburner ~ 120 kg/m3
+        rho_fuel=60.0,   # High-pressure GCH4 from fuel preburner ~ 60 kg/m3
+        phase_ox="gas",
+        phase_fuel="gas",
+        delta_p_ratio=0.15,
+        n_elements=61,
+    ).solve()
+    assert raptor["phase_ox"] == "gas"
+    assert raptor["phase_fuel"] == "gas"
+    assert "Raptor" in raptor["phase_regime"]
+    assert raptor["momentum_flux_ratio_J"] > 0.0
+    # Single phase gas-gas mixing has no droplet SMD
+    assert raptor["smd_um"] is None
+
