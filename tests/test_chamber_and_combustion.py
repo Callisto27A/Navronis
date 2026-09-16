@@ -122,3 +122,62 @@ def test_residence_time():
     assert tau.status == Status.PASS
     expected_tau = (Vc * rho_gas) / mdot
     assert pytest.approx(tau.value, rel=1e-6) == expected_tau
+
+
+def test_storable_and_hypergolic_presets():
+    """Verify NASA CEA-verified thermochemical presets for storable and green propellants."""
+    from kryptonis.propulsion_equations.chamber import THERMOCHEMICAL_PRESETS, characteristic_length
+    from kryptonis.propulsion_equations.combustor import CombustorDesign
+
+    # 1. Preset presence and physical sanity
+    assert "N2O4/MMH" in THERMOCHEMICAL_PRESETS
+    assert "Hydrazine" in THERMOCHEMICAL_PRESETS
+    assert "N2O/Ethanol" in THERMOCHEMICAL_PRESETS
+
+    # N2O4/MMH: nominal O/F ~ 1.65, Tc ~ 3120 K
+    mmh = THERMOCHEMICAL_PRESETS["N2O4/MMH"]
+    assert pytest.approx(mmh["of"], rel=1e-2) == 1.65
+    assert mmh["tc"] == 3120.0
+    assert 1.20 <= mmh["gamma"] <= 1.26
+    assert 1650.0 <= mmh["c_star"] <= 1800.0
+
+    # Hydrazine monopropellant: catalytic decomposition Tc ~ 1200 K
+    hyd = THERMOCHEMICAL_PRESETS["Hydrazine"]
+    assert hyd["tc"] == 1200.0
+    assert hyd["of"] == 0.0
+    assert 1.25 <= hyd["gamma"] <= 1.32
+    assert 1200.0 <= hyd["c_star"] <= 1400.0
+
+    # N2O/Ethanol green bipropellant: nominal O/F ~ 4.0
+    n2o_eth = THERMOCHEMICAL_PRESETS["N2O/Ethanol"]
+    assert pytest.approx(n2o_eth["of"], rel=1e-2) == 4.0
+    assert n2o_eth["tc"] == 2850.0
+    assert 1500.0 <= n2o_eth["c_star"] <= 1700.0
+
+    # 2. CombustorDesign analytical solve with new presets
+    for prop in ("N2O4/MMH", "Hydrazine", "N2O/Ethanol"):
+        of = THERMOCHEMICAL_PRESETS[prop]["of"]
+        design = CombustorDesign(
+            thrust=10000.0,
+            chamber_pressure=2.0e6,
+            mixture_ratio=of,
+            propellant=prop,
+        )
+        res = design.solve()
+        assert res.throat_diameter > 0.0
+        assert res.chamber_volume > 0.0
+        assert res.c_star_ideal > 1000.0
+
+    # 3. SP-125 characteristic length mapping for hydrazine-base fuels
+    l_star_mmh = characteristic_length(fuel="MMH")
+    assert l_star_mmh.status == Status.UNVALIDATED_ASSUMPTION
+    assert 0.70 <= l_star_mmh.value <= 0.95
+
+    # 4. Helper get_thermochemical_preset alias resolution
+    from kryptonis.propulsion_equations.chamber import get_thermochemical_preset
+    assert get_thermochemical_preset("N2H4")["tc"] == 1200.0
+    assert get_thermochemical_preset("hydrazine")["c_star"] == 1330.0
+    assert get_thermochemical_preset("n2o/ethanol")["of"] == 4.0
+    assert get_thermochemical_preset("N2O4/MMH")["coolant"] == "MMH"
+
+

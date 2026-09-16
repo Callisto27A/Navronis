@@ -21,6 +21,7 @@ from kryptonis.propulsion_equations.chamber import (
     vandenkerckhove,
     c_star_ideal,
     contraction_ratio,
+    get_thermochemical_preset,
 )
 from kryptonis.propulsion_equations.combustion import chamber_bulk_residence_time
 from kryptonis.propulsion_equations.regen_channel import RegenCoolingJacket
@@ -51,15 +52,7 @@ def run_chamber_sizing(
     export_cadquery_path: str | None = None,
 ) -> int:
     pc_pa = pc_bar * 1.0e5
-
-    prop_defaults = {
-        "LOX/RP-1": {"gamma": 1.22, "mw": 0.0235, "tc": 3600.0, "l_star": 1.05, "c_star": 1780.0},
-        "LOX/CH4": {"gamma": 1.20, "mw": 0.0220, "tc": 3450.0, "l_star": 1.00, "c_star": 1820.0},
-        "LOX/LH2": {"gamma": 1.23, "mw": 0.0150, "tc": 3250.0, "l_star": 0.85, "c_star": 2350.0},
-    }
-
-    norm_prop = propellants.upper().replace("METHANE", "CH4").replace("KEROSENE", "RP-1")
-    defaults = prop_defaults.get(norm_prop, prop_defaults["LOX/RP-1"])
+    defaults = get_thermochemical_preset(propellants)
 
     gamma = defaults["gamma"]
     mw = defaults["mw"]
@@ -131,7 +124,7 @@ def run_chamber_sizing(
     print("Inputs:")
     print(f"  Thrust:                {thrust_n / 1e3:.2f} kN ({thrust_n:.0f} N)")
     print(f"  Chamber Pressure (Pc): {pc_bar:.2f} bar ({pc_pa / 1e6:.2f} MPa)")
-    print(f"  Propellants:           {norm_prop} (gamma={gamma:.2f}, Tc={tc:.0f} K, Mw={mw*1e3:.1f} g/mol)")
+    print(f"  Propellants:           {propellants} (gamma={gamma:.2f}, Tc={tc:.0f} K, Mw={mw*1e3:.1f} g/mol)")
     print(f"  Characteristic L*:     {effective_l_star:.2f} m")
     print(f"  Estimated Mass Flow:   {mdot:.2f} kg/s (assuming Cf={cf_est:.2f}, c*={c_star:.1f} m/s)")
     print("-" * 78)
@@ -185,7 +178,7 @@ def run_chamber_sizing(
 
     if do_plot:
         from kryptonis.propulsion_equations.plotting import plot_chamber_profile
-        title = (f"{norm_prop}  {thrust_n/1e3:.0f} kN  Pc={pc_bar:.0f} bar  "
+        title = (f"{propellants}  {thrust_n/1e3:.0f} kN  Pc={pc_bar:.0f} bar  "
                  f"eps={expansion_ratio:.0f}")
         plot_chamber_profile(
             profile,
@@ -200,7 +193,7 @@ def run_chamber_sizing(
     sizing_results = {
         "thrust_kN": thrust_n / 1e3,
         "chamber_pressure_bar": pc_bar,
-        "propellants": norm_prop,
+        "propellants": propellants,
         "c_star_m_s": c_star,
         "mass_flow_kg_s": mdot,
         "throat_diameter_mm": dt_m * 1e3,
@@ -249,20 +242,24 @@ def run_injector_sizing(
     from kryptonis.propulsion_equations.injector import InjectorDesign
 
     pc_pa = pc_bar * 1e5
-    # Standard propellant properties (density kg/m³, typical Isp sea-level s, nominal O/F)
-    prop_table = {
-        "LOX/CH4": {"rho_ox": 1141.0, "rho_f": 422.0, "isp": 295.0, "of": 3.5},
-        "LOX/RP-1": {"rho_ox": 1141.0, "rho_f": 810.0, "isp": 285.0, "of": 2.6},
-        "LOX/LH2": {"rho_ox": 1141.0, "rho_f": 71.0, "isp": 390.0, "of": 6.0},
-    }
-    norm = propellants.upper().replace("METHANE", "CH4").replace("KEROSENE", "RP-1")
-    pinfo = prop_table.get(norm, prop_table["LOX/CH4"])
+    pinfo = get_thermochemical_preset(propellants)
 
     # Mass flow estimate: m_dot = Thrust / (Isp * 9.80665)
     m_dot_total = thrust_n / (pinfo["isp"] * 9.80665)
     of = pinfo["of"]
     m_dot_fuel = m_dot_total / (1.0 + of)
     m_dot_ox = m_dot_total - m_dot_fuel
+
+    if m_dot_ox <= 0.0:
+        print("=" * 78)
+        print(f"NAVRONIS PROPULSION -- INJECTOR SIZING: {propellants.upper()}")
+        print("=" * 78)
+        print(f"NOTICE: {propellants} is a catalytic monopropellant (O/F = 0.0).")
+        print("Canonical bipropellant injector families (shear coaxial, swirl coaxial, pintle, doublet)")
+        print("require separate oxidizer and fuel circuits. Monopropellant catalytic bed sizing")
+        print("is scheduled for the Monopropellant Propulsion module (see Issue #4 & Roadmap).")
+        print("=" * 78)
+        return 0
 
     des = InjectorDesign(
         injector_type=injector_type,
@@ -341,14 +338,7 @@ def run_cooling_sizing(
     liner_material: str = "CuCrZr",
 ) -> int:
     pc_pa = pc_bar * 1.0e5
-    norm_prop = propellants.upper().replace("METHANE", "CH4").replace("KEROSENE", "RP-1")
-
-    prop_specs = {
-        "LOX/RP-1": {"c_star": 1780.0, "gamma": 1.22, "tc": 3600.0, "isp": 285.0, "of": 2.6, "coolant": "RP-1"},
-        "LOX/CH4": {"c_star": 1820.0, "gamma": 1.20, "tc": 3450.0, "isp": 295.0, "of": 3.5, "coolant": "CH4"},
-        "LOX/LH2": {"c_star": 2350.0, "gamma": 1.23, "tc": 3250.0, "isp": 390.0, "of": 6.0, "coolant": "LH2"},
-    }
-    spec = prop_specs.get(norm_prop, prop_specs["LOX/RP-1"])
+    spec = get_thermochemical_preset(propellants)
 
     cf_est = 1.75
     at = thrust_n / (pc_pa * cf_est)
@@ -388,7 +378,7 @@ def run_cooling_sizing(
 
     print("=" * 78)
     print(f"NAVRONIS PROPULSION -- REGENERATIVE COOLING REPORT (DAY 3)")
-    print(f"Propellant: {norm_prop} | Thrust: {thrust_n/1e3:.1f} kN | Pc: {pc_bar:.1f} bar | Liner: {liner_material}")
+    print(f"Propellant: {propellants} | Thrust: {thrust_n/1e3:.1f} kN | Pc: {pc_bar:.1f} bar | Liner: {liner_material}")
     print("=" * 78)
     print(f"Coolant Mass Flow:         {mdot_f:.3f} kg/s ({spec['coolant']})")
     print(f"Channels Count:            {res.n_channels} milled channels")
@@ -470,7 +460,10 @@ def main() -> None:
     )
     parser.add_argument(
         "--propellants", default="LOX/RP-1",
-        choices=["LOX/RP-1", "LOX/CH4", "LOX/LH2"],
+        choices=[
+            "LOX/RP-1", "LOX/CH4", "LOX/LH2",
+            "N2O4/MMH", "Hydrazine", "N2O/Ethanol",
+        ],
         help="Propellant combination (default: LOX/RP-1)",
     )
     parser.add_argument(

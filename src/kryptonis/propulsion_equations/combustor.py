@@ -24,6 +24,7 @@ from kryptonis.propulsion_equations.chamber import (
     c_star_ideal,
     contraction_ratio,
     convergent_length,
+    get_thermochemical_preset,
 )
 from kryptonis.propulsion_equations.combustion import chamber_bulk_residence_time
 from kryptonis.propulsion_equations.chamber_acoustics import (
@@ -78,14 +79,7 @@ class CombustorDesign:
 
     def solve(self) -> "CombustorResult":
         """Execute the closed-form analytical sizing sequence."""
-        norm_prop = self.propellant.upper().replace("LCH4", "CH4").replace("KEROSENE", "RP-1")
-        
-        prop_defaults = {
-            "LOX/RP-1": {"gamma": 1.22, "mw": 0.0235, "tc": 3600.0, "l_star": 1.05, "c_star": 1780.0},
-            "LOX/CH4": {"gamma": 1.20, "mw": 0.0220, "tc": 3450.0, "l_star": 1.00, "c_star": 1820.0},
-            "LOX/LH2": {"gamma": 1.23, "mw": 0.0150, "tc": 3250.0, "l_star": 0.85, "c_star": 2350.0},
-        }
-        defaults = prop_defaults.get(norm_prop, prop_defaults["LOX/CH4"])
+        defaults = get_thermochemical_preset(self.propellant)
 
         gamma = defaults["gamma"]
         mw = defaults["mw"]

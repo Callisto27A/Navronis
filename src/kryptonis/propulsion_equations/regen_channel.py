@@ -199,6 +199,30 @@ class RegenCoolingJacket:
             "t_inlet_default": 40.0,
             "t_limit": 300.0,
         },
+        "MMH": {
+            "rho": 880.0,       # kg/m³
+            "cp": 2900.0,       # J/kg-K
+            "k": 0.20,          # W/m-K
+            "mu": 8.5e-4,       # Pa-s
+            "t_inlet_default": 298.0,
+            "t_limit": 450.0,   # Thermal decomposition threshold
+        },
+        "HYDRAZINE": {
+            "rho": 1004.0,      # kg/m³
+            "cp": 3080.0,       # J/kg-K
+            "k": 0.25,          # W/m-K
+            "mu": 9.7e-4,       # Pa-s
+            "t_inlet_default": 298.0,
+            "t_limit": 420.0,   # Exothermic decomposition threshold
+        },
+        "ETHANOL": {
+            "rho": 789.0,       # kg/m³
+            "cp": 2440.0,       # J/kg-K
+            "k": 0.17,          # W/m-K
+            "mu": 1.2e-3,       # Pa-s
+            "t_inlet_default": 293.0,
+            "t_limit": 400.0,   # Vaporization / boiling limit
+        },
     }
 
     MATERIAL_PROPERTIES = {
@@ -277,7 +301,13 @@ class RegenCoolingJacket:
         self.h_c = float(channel_height_m)
         self.t_fin = float(fin_thickness_m)
         self.t_w = float(wall_thickness_m)
-        self.coolant_type = coolant_type.upper().replace("LCH4", "CH4").replace("METHANE", "CH4")
+        self.coolant_type = (
+            coolant_type.upper()
+            .replace("LCH4", "CH4")
+            .replace("METHANE", "CH4")
+            .replace("KEROSENE", "RP-1")
+            .replace("N2H4", "HYDRAZINE")
+        )
         self.liner_material = liner_material
         self.eps = float(surface_roughness_m)
 

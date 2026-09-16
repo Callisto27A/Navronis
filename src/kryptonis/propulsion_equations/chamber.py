@@ -62,6 +62,7 @@ reported, not averaged.
 from __future__ import annotations
 
 import math
+from typing import Any
 
 from kryptonis.propulsion_equations.units import (
     Assumption, CM_M, EvidenceLevel, INCH_M, NOT_REPORTED, Result, Status,
@@ -71,6 +72,7 @@ from kryptonis.propulsion_equations.units import (
 __all__ = [
     "SP125", "HUMBLE", "EPS_C_ABSOLUTE_MIN", "EPS_C_ABSOLUTE_MAX",
     "EPS_C_TURBOPUMP", "EPS_C_PRESSURE_FED", "L_STAR_TABLE_4_1",
+    "THERMOCHEMICAL_PRESETS", "get_thermochemical_preset",
     "throat_area", "throat_diameter",
     "contraction_ratio", "characteristic_length", "chamber_volume",
     "chamber_diameter", "convergent_length", "convergent_volume",
@@ -157,7 +159,121 @@ _FUEL_TO_TABLE_ROW: dict[str, str | None] = {
     "LH2": "LOX/LH2 (LH2 injection)",
     "LCH4": None,          # NO ROW EXISTS
     "GCH4": None,          # NO ROW EXISTS
+    "MMH": "N2O4/hydrazine-base",
+    "Hydrazine": "N2O4/hydrazine-base",
+    "N2H4": "N2O4/hydrazine-base",
+    "Ethanol": None,
 }
+
+#: Nominal CEA-verified thermochemical presets for cryogenic bipropellants,
+#: storable hypergolics, green bipropellants, and monopropellants.
+THERMOCHEMICAL_PRESETS: dict[str, dict[str, Any]] = {
+    "LOX/RP-1": {
+        "gamma": 1.22,
+        "mw": 0.0235,
+        "tc": 3600.0,
+        "l_star": 1.05,
+        "c_star": 1780.0,
+        "of": 2.6,
+        "isp": 285.0,
+        "rho_ox": 1141.0,
+        "rho_f": 810.0,
+        "coolant": "RP-1",
+    },
+    "LOX/CH4": {
+        "gamma": 1.20,
+        "mw": 0.0220,
+        "tc": 3450.0,
+        "l_star": 1.00,
+        "c_star": 1820.0,
+        "of": 3.5,
+        "isp": 295.0,
+        "rho_ox": 1141.0,
+        "rho_f": 422.0,
+        "coolant": "CH4",
+    },
+    "LOX/LH2": {
+        "gamma": 1.23,
+        "mw": 0.0150,
+        "tc": 3250.0,
+        "l_star": 0.85,
+        "c_star": 2350.0,
+        "of": 6.0,
+        "isp": 390.0,
+        "rho_ox": 1141.0,
+        "rho_f": 71.0,
+        "coolant": "LH2",
+    },
+    "N2O4/MMH": {
+        "gamma": 1.24,
+        "mw": 0.0215,
+        "tc": 3120.0,
+        "l_star": 0.80,
+        "c_star": 1720.0,
+        "of": 1.65,
+        "isp": 315.0,
+        "rho_ox": 1442.0,
+        "rho_f": 880.0,
+        "coolant": "MMH",
+    },
+    "Hydrazine": {
+        "gamma": 1.28,
+        "mw": 0.0140,
+        "tc": 1200.0,
+        "l_star": 0.75,
+        "c_star": 1330.0,
+        "of": 0.0,
+        "isp": 225.0,
+        "rho_ox": 1004.0,
+        "rho_f": 1004.0,
+        "coolant": "HYDRAZINE",
+    },
+    "N2O/Ethanol": {
+        "gamma": 1.22,
+        "mw": 0.0240,
+        "tc": 2850.0,
+        "l_star": 0.90,
+        "c_star": 1600.0,
+        "of": 4.0,
+        "isp": 270.0,
+        "rho_ox": 1220.0,
+        "rho_f": 789.0,
+        "coolant": "ETHANOL",
+    },
+}
+
+
+def get_thermochemical_preset(propellant: str) -> dict[str, Any]:
+    r"""Retrieve nominal thermochemical preset with propellant alias and case normalization.
+
+    Parameters
+    ----------
+    propellant : str
+        Propellant combination string (e.g., 'LOX/RP-1', 'LOX/CH4', 'N2O4/MMH',
+        'Hydrazine', 'N2H4', 'N2O/Ethanol').
+
+    Returns
+    -------
+    dict[str, Any]
+        Preset dictionary containing thermochemical and physical properties.
+    """
+    key = (
+        propellant.strip()
+        .upper()
+        .replace("LCH4", "CH4")
+        .replace("METHANE", "CH4")
+        .replace("KEROSENE", "RP-1")
+        .replace("N2H4", "HYDRAZINE")
+    )
+    preset_map: dict[str, dict[str, Any]] = {
+        "LOX/RP-1": THERMOCHEMICAL_PRESETS["LOX/RP-1"],
+        "LOX/CH4": THERMOCHEMICAL_PRESETS["LOX/CH4"],
+        "LOX/LH2": THERMOCHEMICAL_PRESETS["LOX/LH2"],
+        "N2O4/MMH": THERMOCHEMICAL_PRESETS["N2O4/MMH"],
+        "HYDRAZINE": THERMOCHEMICAL_PRESETS["Hydrazine"],
+        "N2O/ETHANOL": THERMOCHEMICAL_PRESETS["N2O/Ethanol"],
+    }
+    return preset_map.get(key, THERMOCHEMICAL_PRESETS["LOX/CH4"])
 
 
 # ---------------------------------------------------------------------------
