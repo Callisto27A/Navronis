@@ -178,6 +178,13 @@ def bartz_sigma(*, wall_temperature_K: float, stagnation_temperature_K: float,
     The closed T_wg/T_0 form is explicitly printed in NASA SP-125 Eq.4-14,
     p.101. This source mapping does not claim experimental validation or
     extend applicability to films, reacting boundary layers or arbitrary fluids.
+
+    SUPERCRITICAL PRESSURE BOUNDARY (Pc > 100 bar):
+    For supercritical high-pressure engines (e.g., SSME, Raptor, RD-180), real-gas
+    property variations and dissociation/recombination near the boundary layer can
+    cause classical constant-cp Bartz to overpredict heat flux by 15-30% unless
+    enthalpy-driving potential or property tables (NASA CEA / REFPROP) are applied
+    (NASA CR-134941; Huzel & Huang SP-125 p.102-105).
     """
     if wall_temperature_K <= 0 or stagnation_temperature_K <= 0:
         return Result(float("nan"), "-", "CAN-BARTZ-SIGMA",

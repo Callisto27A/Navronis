@@ -419,6 +419,9 @@ def convergent_volume(*, throat_diameter_m: float, chamber_diameter_m: float,
 
     .. math:: V = \frac{\pi L}{12}\left(D_c^2 + D_c D_t + D_t^2\right)
 
+    Algebraically identical to Huzel & Huang (NASA SP-125 Eq. 4-5, p.88):
+    .. math:: V_{conv} = \frac{A_t D_t}{6\tan\theta}\left(\varepsilon_c^{3/2} - 1\right)
+
     NOTE: `combustor/sizing.calculate_spline_converging_volume` computes a
     SPLINE contour instead and differs by 2.80 % on the same inputs. That is
     a genuine alternative formulation, not a duplicate, and it is retained as
