@@ -391,7 +391,7 @@
       </a>
       <div class="nav-links">
         <a href="#calculator">Live Sizer</a>
-        <a href="#verification">Verification (35 Tests)</a>
+        <a href="#verification">Verification (62 Tests)</a>
         <a href="#injectors">4 Injector Types</a>
         <a href="#visualization">CAD Geometry</a>
         <a href="#cli">CLI & Code</a>
@@ -410,7 +410,7 @@
     <div class="container">
       <div class="tagline-badge">
         <span class="dot"></span>
-        v0.3.0 Open-Source Release • 35 Unit Tests (100% Pass Rate)
+        v0.4.0 Open-Source Release • 35 Unit Tests (100% Pass Rate)
       </div>
       <h1>First-Principles Liquid Rocket<br>Propulsion Analytical Toolkit</h1>
       <p>
@@ -522,6 +522,31 @@
             <option value="OFHC">OFHC Pure Copper</option>
             <option value="Inconel-718">Inconel-718 Superalloy</option>
           </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <span style="font-size: 12px; font-weight: 800; color: #a855f7; text-transform: uppercase; letter-spacing: 0.8px;">🚀 Supersonic Nozzle & Altitude Inputs (Day 4)</span>
+      </div>
+      <div class="calc-grid" style="margin-bottom: 24px;">
+        <div class="calc-field">
+          <label>Nozzle Contour</label>
+          <select id="inp-nozzle-type" onchange="calculateSizing()">
+            <option value="bell">Rao 80% Parabolic Bell (High Efficiency)</option>
+            <option value="conical">15° Conical Nozzle (Baseline)</option>
+          </select>
+        </div>
+        <div class="calc-field">
+          <label>Expansion Ratio (ε = Ae/At)</label>
+          <input type="number" id="inp-eps" value="30.0" step="1" min="3" max="150" oninput="calculateSizing()">
+        </div>
+        <div class="calc-field">
+          <label>Flight Altitude (m)</label>
+          <input type="number" id="inp-alt" value="0" step="1000" min="0" max="85000" oninput="calculateSizing()">
+        </div>
+        <div class="calc-field">
+          <label>Bell Exit Lip Angle θe (°)</label>
+          <input type="number" id="inp-theta-e" value="8.0" step="0.5" min="2" max="15" oninput="calculateSizing()">
         </div>
       </div>
 
@@ -661,6 +686,58 @@
         </div>
       </div>
 
+      <!-- Day 4 Panel: Supersonic Nozzle & Altitude Performance -->
+      <div class="panel-title" style="color: #a855f7; display: flex; justify-content: space-between; align-items: center;">
+        <span>🚀 4. Supersonic Nozzle & Altitude Performance Results (Day 4)</span>
+        <span style="font-size: 11px; text-transform: none; color: #94a3b8;">NASA SP-125 / Rao (1958) / Stark (2005) / 1976 US Standard Atmosphere</span>
+      </div>
+      <div class="calc-results" style="border-color: rgba(168, 85, 247, 0.3); margin-bottom: 24px;">
+        <div class="res-box">
+          <div class="res-label">Exit Diam (De)</div>
+          <div class="res-val highlight" style="color: #c084fc;" id="res-de">233.6 mm</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Nozzle Length (Lnoz)</div>
+          <div class="res-val" id="res-lnoz">385.2 mm</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Exit Mach Number</div>
+          <div class="res-val highlight" id="res-me">4.12</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Exit Pressure (Pe)</div>
+          <div class="res-val" id="res-pe">20.5 kPa</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Ambient Pressure (Pa)</div>
+          <div class="res-val" id="res-pa">101.3 kPa</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Divergence Factor (λ)</div>
+          <div class="res-val highlight" style="color: #a855f7;" id="res-lambda">0.973</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Boundary Layer δ*</div>
+          <div class="res-val" id="res-dstar">1050 µm</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Delivered Thrust</div>
+          <div class="res-val highlight" style="color: #22c55e;" id="res-fdeliv">28.4 kN</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Delivered Isp (Flight)</div>
+          <div class="res-val highlight" style="color: #22c55e;" id="res-ispdeliv">276.5 s</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Vacuum Isp (Space)</div>
+          <div class="res-val" style="color: #38bdf8;" id="res-ispvac">318.2 s</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label">Flow Separation (Stark)</div>
+          <div class="res-val accent" id="res-sep-status">ATTACHED</div>
+        </div>
+      </div>
+
       <!-- Live Interactive CAD Cross-Section Diagram -->
       <div style="background: #030712; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 20px; text-align: center;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -676,6 +753,8 @@
           <span><span style="display:inline-block;width:12px;height:12px;background:#eab308;margin-right:4px;border-radius:2px;"></span> Convergent Cone</span>
           <span><span style="display:inline-block;width:12px;height:12px;background:#ef4444;margin-right:4px;border-radius:2px;"></span> Sonic Throat</span>
           <span><span style="display:inline-block;width:12px;height:12px;background:#10b981;margin-right:4px;border-radius:2px;"></span> Regen Channels (Coolant)</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#a855f7;margin-right:4px;border-radius:2px;"></span> Rao 80% Bell Nozzle</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#ef4444;border-radius:2px;margin-right:4px;"></span> Separation Shock</span>
         </div>
       </div>
 
@@ -686,7 +765,7 @@
   <section id="verification" class="container">
     <div class="test-matrix-card">
       <div class="section-title" style="margin-bottom: 20px; text-align: left;">
-        <h2>Automated Verification Matrix (35 Tests)</h2>
+        <h2>Automated Verification Matrix (62 Tests)</h2>
         <p>100% test coverage with zero heavy CFD binary requirements. Runs in 2.12s.</p>
       </div>
       <table class="test-table">
@@ -745,6 +824,24 @@
             <td><strong>Day 2: Pintle & Doublets</strong></td>
             <td><code>test_injector.py</code> (Pintle & Impinging)</td>
             <td>Dressler/Heister TMR & spray cone angle, Rupe momentum balance, Ingebo breakup SMD</td>
+            <td><span class="badge-pass">PASSED</span></td>
+          </tr>
+                  <tr>
+            <td><strong>Day 3: Cooling Channels</strong></td>
+            <td><code>test_regen_channel.py</code></td>
+            <td>Milled rectangular channels, Gnielinski HTC, Haaland friction, fin efficiency, 1D conjugate thermal closure</td>
+            <td><span class="badge-pass">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><strong>PR #9: Literature Audit</strong></td>
+            <td><code>test_audit_literature_limits.py</code></td>
+            <td>Humble contraction limits, Huzel-Huang Eq. 4-5 closed-form identity, Bartz supercritical boundary</td>
+            <td><span class="badge-pass">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><strong>Day 4: Supersonic Nozzle</strong></td>
+            <td><code>test_nozzle.py</code></td>
+            <td>1D Area-Mach inversion, Rao 80% bell Bézier contour, Stark (2005) tri-criteria separation, 1976 Standard Atmosphere</td>
             <td><span class="badge-pass">PASSED</span></td>
           </tr>
         </tbody>
@@ -1101,40 +1198,188 @@
       // -------------------------------------------------------------
       // 4. Render Dynamic SVG Combustor, Injector & Cooling Assembly
       // -------------------------------------------------------------
-      renderAssemblySvg(dc * 1000, dt * 1000, lcyl * 1000, lconv * 1000, injType, h_c_mm);
+      // -------------------------------------------------------------
+      // 4. Day 4: Supersonic Nozzle Aerodynamics & Altitude Engine
+      // -------------------------------------------------------------
+      const eps_geom = Math.max(parseFloat(document.getElementById('inp-eps').value) || 30.0, 2.0);
+      const alt_m = Math.max(parseFloat(document.getElementById('inp-alt').value) || 0.0, 0.0);
+      const nozType = document.getElementById('inp-nozzle-type').value;
+      const theta_e_val = Math.max(parseFloat(document.getElementById('inp-theta-e').value) || 8.0, 2.0);
+
+      // 1976 Standard Atmosphere model
+      let p_amb_pa = 101325.0;
+      if (alt_m <= 11000.0) {
+        const T_a = 288.15 - 0.0065 * alt_m;
+        p_amb_pa = 101325.0 * Math.pow(T_a / 288.15, 5.25588);
+      } else if (alt_m <= 20000.0) {
+        p_amb_pa = 22632.1 * Math.exp(-9.80665 * (alt_m - 11000.0) / (287.05 * 216.65));
+      } else if (alt_m <= 32000.0) {
+        const T_a = 216.65 + 0.0010 * (alt_m - 20000.0);
+        p_amb_pa = 5474.89 * Math.pow(216.65 / T_a, 34.163);
+      } else if (alt_m <= 47000.0) {
+        const T_a = 228.65 + 0.0028 * (alt_m - 32000.0);
+        p_amb_pa = 868.019 * Math.pow(228.65 / T_a, 12.201);
+      } else {
+        p_amb_pa = Math.max(110.9 * Math.exp(-9.80665 * (alt_m - 47000.0) / (287.05 * 270.65)), 0.1);
+      }
+
+      // 1D Area-Mach inversion (Bisection for supersonic branch)
+      function areaRatioMach(M, g) {
+        const t1 = 1.0 / M;
+        const t2 = (2.0 + (g - 1.0) * M * M) / (g + 1.0);
+        const p = (g + 1.0) / (2.0 * (g - 1.0));
+        return t1 * Math.pow(t2, p);
+      }
+
+      let m_low = 1.0, m_high = 10.0, me_sol = 3.5;
+      for (let iter = 0; iter < 40; iter++) {
+        me_sol = 0.5 * (m_low + m_high);
+        const ar_eval = areaRatioMach(me_sol, gamma);
+        if (ar_eval > eps_geom) {
+          m_high = me_sol;
+        } else {
+          m_low = me_sol;
+        }
+      }
+
+      // Static pressure and temperature at nozzle exit
+      const t_tot_ratio = 1.0 + 0.5 * (gamma - 1.0) * me_sol * me_sol;
+      const pe_pa = pc_pa * Math.pow(t_tot_ratio, -gamma / (gamma - 1.0));
+      const te_k = tc / t_tot_ratio;
+      const de_m = dt * Math.sqrt(eps_geom);
+      const re_m = de_m / 2.0;
+
+      // Divergence efficiency
+      let lambda_noz = 0.98296;
+      if (nozType === 'bell') {
+        const mean_ang = 0.5 * (30.0 + theta_e_val);
+        lambda_noz = (1.0 + Math.cos(mean_ang * Math.PI / 180.0)) / 2.0;
+      } else {
+        lambda_noz = (1.0 + Math.cos(15.0 * Math.PI / 180.0)) / 2.0;
+      }
+
+      // Ideal thrust coefficient (NASA SP-125)
+      function cfIdeal(pe, pa) {
+        const term1 = (2.0 * gamma * gamma) / (gamma - 1.0);
+        const term2 = Math.pow(2.0 / (gamma + 1.0), (gamma + 1.0) / (gamma - 1.0));
+        const term3 = 1.0 - Math.pow(pe / pc_pa, (gamma - 1.0) / gamma);
+        const mom = Math.sqrt(Math.max(term1 * term2 * term3, 0.0));
+        const press = ((pe - pa) / pc_pa) * eps_geom;
+        return mom + press;
+      }
+
+      const cf_id = cfIdeal(pe_pa, p_amb_pa);
+      const cf_vac = cfIdeal(pe_pa, 0.0);
+      const cf_sl = cfIdeal(pe_pa, 101325.0);
+
+      // Boundary layer displacement estimate
+      const l_cone_eq = (re_m - (dt / 2.0)) / Math.tan(15.0 * Math.PI / 180.0);
+      const l_noz_m = (nozType === 'bell' ? 0.80 : 1.0) * l_cone_eq;
+      const d_star_noz = Math.max(0.0008 * l_noz_m, 0.0002);
+      const bl_deficit = (2.0 * Math.PI * re_m * d_star_noz) / (Math.PI * re_m * re_m);
+
+      const cf_deliv = cf_id * lambda_noz * (1.0 - bl_deficit);
+      const cf_vac_del = cf_vac * lambda_noz * (1.0 - bl_deficit);
+      const cf_sl_del = cf_sl * lambda_noz * (1.0 - bl_deficit);
+
+      const f_deliv_n = cf_deliv * pc_pa * (Math.PI * dt * dt / 4.0);
+      const isp_deliv = (cstar * cf_deliv) / 9.80665;
+      const isp_vac = (cstar * cf_vac_del) / 9.80665;
+
+      // Stark 2005 Separation Criteria Check
+      const p_summerfield = 0.375 * p_amb_pa;
+      const p_schmucker = 0.64 * Math.pow(me_sol, -1.88) * p_amb_pa;
+      const p_kalt_badal = 0.20 * Math.pow(pc_pa / p_amb_pa, 0.3333) * p_amb_pa;
+
+      const sep_sum = pe_pa < p_summerfield;
+      const sep_schm = pe_pa < p_schmucker;
+      const sep_kb = pe_pa < p_kalt_badal;
+
+      let sep_label = 'ATTACHED (All Criteria Safe)';
+      let sep_class = 'res-val accent';
+      let is_sep_flow = false;
+
+      if (sep_sum && sep_schm && sep_kb) {
+        sep_label = 'SEPARATED (High Risk Overexpansion)';
+        sep_class = 'res-val highlight';
+        is_sep_flow = true;
+      } else if (sep_sum || sep_kb) {
+        sep_label = 'UNRESOLVED (Summerfield/KB Warn)';
+        sep_class = 'res-val highlight';
+        is_sep_flow = true;
+      }
+
+      document.getElementById('res-de').innerText = (de_m * 1000).toFixed(1) + ' mm';
+      document.getElementById('res-lnoz').innerText = (l_noz_m * 1000).toFixed(1) + ' mm';
+      document.getElementById('res-me').innerText = me_sol.toFixed(2) + ' (Mach)';
+      document.getElementById('res-pe').innerText = (pe_pa / 1000).toFixed(1) + ' kPa (' + (pe_pa / 1e5).toFixed(3) + ' bar)';
+      document.getElementById('res-pa').innerText = (p_amb_pa / 1000).toFixed(1) + ' kPa';
+      document.getElementById('res-lambda').innerText = lambda_noz.toFixed(4) + ' (' + (lambda_noz * 100).toFixed(1) + '%)';
+      document.getElementById('res-dstar').innerText = (d_star_noz * 1e6).toFixed(0) + ' µm';
+      document.getElementById('res-fdeliv').innerText = (f_deliv_n / 1000).toFixed(1) + ' kN';
+      document.getElementById('res-ispdeliv').innerText = isp_deliv.toFixed(1) + ' s';
+      document.getElementById('res-ispvac').innerText = isp_vac.toFixed(1) + ' s';
+      document.getElementById('res-sep-status').innerText = sep_label;
+      document.getElementById('res-sep-status').className = sep_class;
+
+      // -------------------------------------------------------------
+      // 5. Render Dynamic SVG Combustor, Injector, Cooling & Supersonic Bell
+      // -------------------------------------------------------------
+      renderAssemblySvg(dc * 1000, dt * 1000, de_m * 1000, lcyl * 1000, lconv * 1000, l_noz_m * 1000, injType, h_c_mm, nozType, is_sep_flow);
     }
 
-    function renderAssemblySvg(Dc_mm, Dt_mm, Lcyl_mm, Lconv_mm, injType, ch_depth_mm) {
-      const svgW = 760;
-      const svgH = 240;
+    function renderAssemblySvg(Dc_mm, Dt_mm, De_mm, Lcyl_mm, Lconv_mm, Lnoz_mm, injType, ch_depth_mm, nozType, isSeparated) {
+      const svgW = 860;
+      const svgH = 260;
       const midY = svgH / 2;
 
-      // Scaling factors
-      const totalL = Lcyl_mm + Lconv_mm + (Dt_mm * 1.5);
-      const scaleX = 520 / Math.max(totalL, 100);
-      const scaleY = 70 / Math.max(Dc_mm, 30);
+      // Scaling factors to fit viewport
+      const totalL = Lcyl_mm + Lconv_mm + Lnoz_mm;
+      const maxR = Math.max(Dc_mm, De_mm) / 2;
+      const scaleX = 640 / Math.max(totalL, 120);
+      const scaleY = 90 / Math.max(maxR, 20);
 
-      const startX = 115;
+      const startX = 75;
       const xFace = startX;
       const xCylEnd = startX + (Lcyl_mm * scaleX);
       const xThroat = xCylEnd + (Lconv_mm * scaleX);
-      const xExit = xThroat + (Dt_mm * 1.2 * scaleX);
+      const xExit = xThroat + (Lnoz_mm * scaleX);
 
       const rC = (Dc_mm / 2) * scaleY;
       const rT = (Dt_mm / 2) * scaleY;
-      const rExit = rT * 1.6;
+      const rExit = (De_mm / 2) * scaleY;
 
-      // Wall and cooling channel heights
-      const wallPx = 6;
-      const chPx = Math.max(ch_depth_mm * 3.5, 5);
+      const wallPx = 5;
+      const chPx = Math.max(ch_depth_mm * 2.8, 4);
 
-      // Liner paths
-      const topWall = `M ${xFace} ${midY - rC - wallPx} L ${xCylEnd} ${midY - rC - wallPx} L ${xThroat} ${midY - rT - wallPx} L ${xExit} ${midY - rExit - wallPx} L ${xExit} ${midY - rExit} L ${xThroat} ${midY - rT} L ${xCylEnd} ${midY - rC} L ${xFace} ${midY - rC} Z`;
-      const botWall = `M ${xFace} ${midY + rC} L ${xCylEnd} ${midY + rC} L ${xThroat} ${midY + rT} L ${xExit} ${midY + rExit} L ${xExit} ${midY + rExit + wallPx} L ${xThroat} ${midY + rT + wallPx} L ${xCylEnd} ${midY + rC + wallPx} L ${xFace} ${midY + rC + wallPx} Z`;
+      let topOuter = '';
+      let botOuter = '';
+      let topNozzle = '';
+      let botNozzle = '';
 
-      // Cooling channels outer jacket paths
-      const topCh = `M ${xFace} ${midY - rC - wallPx - chPx} L ${xCylEnd} ${midY - rC - wallPx - chPx} L ${xThroat} ${midY - rT - wallPx - chPx} L ${xExit} ${midY - rExit - wallPx - chPx} L ${xExit} ${midY - rExit - wallPx} L ${xThroat} ${midY - rT - wallPx} L ${xCylEnd} ${midY - rC - wallPx} L ${xFace} ${midY - rC - wallPx} Z`;
-      const botCh = `M ${xFace} ${midY + rC + wallPx} L ${xCylEnd} ${midY + rC + wallPx} L ${xThroat} ${midY + rT + wallPx} L ${xExit} ${midY + rExit + wallPx} L ${xExit} ${midY + rExit + wallPx + chPx} L ${xThroat} ${midY + rT + wallPx + chPx} L ${xCylEnd} ${midY + rC + wallPx + chPx} L ${xFace} ${midY + rC + wallPx + chPx} Z`;
+      if (nozType === 'bell') {
+        const ctrlX = xThroat + (xExit - xThroat) * 0.35;
+        const ctrlYTop = midY - rT - (rExit - rT) * 0.70;
+        const ctrlYBot = midY + rT + (rExit - rT) * 0.70;
+
+        topNozzle = `Q ${ctrlX} ${ctrlYTop} ${xExit} ${midY - rExit}`;
+        botNozzle = `Q ${ctrlX} ${ctrlYBot} ${xExit} ${midY + rExit}`;
+
+        topOuter = `L ${xExit} ${midY - rExit - wallPx} Q ${ctrlX} ${ctrlYTop - wallPx} ${xThroat} ${midY - rT - wallPx}`;
+        botOuter = `L ${xExit} ${midY + rExit + wallPx} Q ${ctrlX} ${ctrlYBot + wallPx} ${xThroat} ${midY + rT + wallPx}`;
+      } else {
+        topNozzle = `L ${xExit} ${midY - rExit}`;
+        botNozzle = `L ${xExit} ${midY + rExit}`;
+
+        topOuter = `L ${xExit} ${midY - rExit - wallPx} L ${xThroat} ${midY - rT - wallPx}`;
+        botOuter = `L ${xExit} ${midY + rExit + wallPx} L ${xThroat} ${midY + rT + wallPx}`;
+      }
+
+      const topWallPath = `M ${xFace} ${midY - rC - wallPx} L ${xCylEnd} ${midY - rC - wallPx} L ${xThroat} ${midY - rT - wallPx} ${topOuter} L ${xExit} ${midY - rExit} ${nozType === 'bell' ? 'Q ' + (xThroat + (xExit - xThroat)*0.35) + ' ' + (midY - rT - (rExit - rT)*0.70) + ' ' + xThroat + ' ' + (midY - rT) : 'L ' + xThroat + ' ' + (midY - rT)} L ${xCylEnd} ${midY - rC} L ${xFace} ${midY - rC} Z`;
+      const botWallPath = `M ${xFace} ${midY + rC} L ${xCylEnd} ${midY + rC} L ${xThroat} ${midY + rT} ${nozType === 'bell' ? 'Q ' + (xThroat + (xExit - xThroat)*0.35) + ' ' + (midY + rT + (rExit - rT)*0.70) + ' ' + xExit + ' ' + (midY + rExit) : 'L ' + xExit + ' ' + (midY + rExit)} L ${xExit} ${midY + rExit + wallPx} ${botOuter} L ${xCylEnd} ${midY + rC + wallPx} L ${xFace} ${midY + rC + wallPx} Z`;
+
+      const topCh = `M ${xFace} ${midY - rC - wallPx - chPx} L ${xCylEnd} ${midY - rC - wallPx - chPx} L ${xThroat} ${midY - rT - wallPx - chPx} L ${xThroat + (xExit - xThroat)*0.25} ${midY - (rT + (rExit - rT)*0.25) - wallPx - chPx} L ${xThroat + (xExit - xThroat)*0.25} ${midY - (rT + (rExit - rT)*0.25) - wallPx} L ${xThroat} ${midY - rT - wallPx} L ${xCylEnd} ${midY - rC - wallPx} L ${xFace} ${midY - rC - wallPx} Z`;
+      const botCh = `M ${xFace} ${midY + rC + wallPx} L ${xCylEnd} ${midY + rC + wallPx} L ${xThroat} ${midY + rT + wallPx} L ${xThroat + (xExit - xThroat)*0.25} ${midY + (rT + (rExit - rT)*0.25) + wallPx} L ${xThroat + (xExit - xThroat)*0.25} ${midY + (rT + (rExit - rT)*0.25) + wallPx + chPx} L ${xThroat} ${midY + rT + wallPx + chPx} L ${xCylEnd} ${midY + rC + wallPx + chPx} L ${xFace} ${midY + rC + wallPx + chPx} Z`;
 
       let injGraphic = '';
       if (injType === 'pintle') {
@@ -1149,51 +1394,64 @@
                       <line x1="${xFace - 8}" y1="${midY + rC * 0.6}" x2="${xFace + 6}" y2="${midY + rC * 0.6}" stroke="#38bdf8" stroke-width="2.5" />`;
       }
 
+      let sepGraphic = '';
+      if (isSeparated) {
+        const xSep = xThroat + (xExit - xThroat) * 0.65;
+        const rSep = rT + (rExit - rT) * 0.65;
+        sepGraphic = `
+          <line x1="${xSep}" y1="${midY - rSep - 6}" x2="${xSep}" y2="${midY + rSep + 6}" stroke="#ef4444" stroke-dasharray="5,3" stroke-width="2" />
+          <text x="${xSep - 20}" y="${midY - rSep - 10}" fill="#ef4444" font-size="10" font-family="'JetBrains Mono', monospace" font-weight="700">SHOCK SEPARATION</text>
+        `;
+      }
+
       const svg = `
         <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="100%" style="overflow: visible;">
           <!-- Centerline -->
-          <line x1="70" y1="${midY}" x2="${xExit + 40}" y2="${midY}" stroke="#475569" stroke-dasharray="6,4" stroke-width="1.2" />
+          <line x1="40" y1="${midY}" x2="${xExit + 30}" y2="${midY}" stroke="#475569" stroke-dasharray="6,4" stroke-width="1.2" />
 
-          <!-- Regenerative Cooling Channels (Fluid Flow Jacket) -->
+          <!-- Supersonic Exhaust Plume Gradient -->
+          <polygon points="${xThroat},${midY - rT} ${xExit},${midY - rExit} ${xExit},${midY + rExit} ${xThroat},${midY + rT}" fill="rgba(168, 85, 247, 0.08)" />
+
+          <!-- Regenerative Cooling Channels -->
           <path d="${topCh}" fill="rgba(16, 185, 129, 0.3)" stroke="#10b981" stroke-dasharray="4,2" stroke-width="1.2" />
           <path d="${botCh}" fill="rgba(16, 185, 129, 0.3)" stroke="#10b981" stroke-dasharray="4,2" stroke-width="1.2" />
 
-          <!-- Metal Liner Wall (Copper Alloy) -->
-          <path d="${topWall}" fill="rgba(249, 115, 22, 0.3)" stroke="#ea580c" stroke-width="1.5" />
-          <path d="${botWall}" fill="rgba(249, 115, 22, 0.3)" stroke="#ea580c" stroke-width="1.5" />
+          <!-- Metal Wall (Chamber Copper + Nozzle Bell) -->
+          <path d="${topWallPath}" fill="rgba(249, 115, 22, 0.3)" stroke="#ea580c" stroke-width="1.5" />
+          <path d="${botWallPath}" fill="rgba(249, 115, 22, 0.3)" stroke="#ea580c" stroke-width="1.5" />
 
-          <!-- Hot Gas Core Glow -->
-          <polygon points="${xFace},${midY - rC} ${xCylEnd},${midY - rC} ${xThroat},${midY - rT} ${xExit},${midY - rExit} ${xExit},${midY + rExit} ${xThroat},${midY + rT} ${xCylEnd},${midY + rC} ${xFace},${midY + rC}" fill="rgba(249, 115, 22, 0.08)" />
+          <!-- Nozzle Bell Shading -->
+          <path d="M ${xThroat} ${midY - rT} ${topNozzle} L ${xExit} ${midY + rExit} ${botNozzle} Z" fill="rgba(168, 85, 247, 0.06)" />
 
-          <!-- Injector Head Assembly -->
+          <!-- Hot Combustion Gas Core Glow -->
+          <polygon points="${xFace},${midY - rC} ${xCylEnd},${midY - rC} ${xThroat},${midY - rT} ${xThroat},${midY + rT} ${xCylEnd},${midY + rC} ${xFace},${midY + rC}" fill="rgba(249, 115, 22, 0.12)" />
+
+          <!-- Injector Head -->
           ${injGraphic}
 
-          <!-- Flow Direction Arrows for Coolant (Counter-Flow) -->
-          <line x1="${xExit - 10}" y1="${midY - rExit - wallPx - chPx/2}" x2="${xThroat + 10}" y2="${midY - rT - wallPx - chPx/2}" stroke="#10b981" stroke-width="1.8" />
-          <line x1="${xThroat - 10}" y1="${midY - rT - wallPx - chPx/2}" x2="${xCylEnd + 10}" y2="${midY - rC - wallPx - chPx/2}" stroke="#10b981" stroke-width="1.8" />
-          <line x1="${xCylEnd - 10}" y1="${midY - rC - wallPx - chPx/2}" x2="${xFace + 20}" y2="${midY - rC - wallPx - chPx/2}" stroke="#10b981" stroke-width="1.8" />
+          <!-- Shock Separation Plane (if separated) -->
+          ${sepGraphic}
 
-          <!-- Dimension Lines & Annotations -->
+          <!-- Dimension Annotations -->
           <!-- Dc Diameter -->
-          <line x1="${xFace + 20}" y1="${midY - rC}" x2="${xFace + 20}" y2="${midY + rC}" stroke="#38bdf8" stroke-width="1" />
-          <text x="${xFace + 26}" y="${midY + 4}" fill="#38bdf8" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="600">Dc: ${Dc_mm.toFixed(1)} mm</text>
+          <line x1="${xFace + 15}" y1="${midY - rC}" x2="${xFace + 15}" y2="${midY + rC}" stroke="#38bdf8" stroke-width="1" />
+          <text x="${xFace + 20}" y="${midY + 4}" fill="#38bdf8" font-size="10.5" font-family="'JetBrains Mono', monospace" font-weight="600">Dc: ${Dc_mm.toFixed(0)}mm</text>
 
           <!-- Dt Throat -->
           <line x1="${xThroat}" y1="${midY - rT}" x2="${xThroat}" y2="${midY + rT}" stroke="#ef4444" stroke-width="1.2" />
-          <text x="${xThroat - 18}" y="${midY + rT + 26}" fill="#ef4444" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="600">Dt: ${Dt_mm.toFixed(1)} mm</text>
+          <text x="${xThroat - 18}" y="${midY + rT + 22}" fill="#ef4444" font-size="10.5" font-family="'JetBrains Mono', monospace" font-weight="600">Dt: ${Dt_mm.toFixed(0)}mm</text>
 
-          <!-- Lcyl Length -->
-          <line x1="${xFace}" y1="${midY - rC - wallPx - chPx - 14}" x2="${xCylEnd}" y2="${midY - rC - wallPx - chPx - 14}" stroke="#f97316" stroke-width="1" />
-          <text x="${(xFace + xCylEnd) / 2 - 30}" y="${midY - rC - wallPx - chPx - 18}" fill="#f97316" font-size="10.5" font-family="'JetBrains Mono', monospace">Lcyl: ${Lcyl_mm.toFixed(1)} mm</text>
+          <!-- De Exit Diameter -->
+          <line x1="${xExit + 6}" y1="${midY - rExit}" x2="${xExit + 6}" y2="${midY + rExit}" stroke="#a855f7" stroke-width="1.2" />
+          <text x="${xExit + 12}" y="${midY + 4}" fill="#c084fc" font-size="10.5" font-family="'JetBrains Mono', monospace" font-weight="600">De: ${De_mm.toFixed(0)}mm</text>
 
-          <!-- Labels -->
-          <text x="25" y="${midY - 15}" fill="#38bdf8" font-size="11" font-family="'Inter', sans-serif" font-weight="700">INJECTOR</text>
-          <text x="35" y="${midY}" fill="#38bdf8" font-size="11" font-family="'Inter', sans-serif" font-weight="700">HEAD</text>
+          <!-- Lnoz Length -->
+          <line x1="${xThroat}" y1="${midY + rExit + 18}" x2="${xExit}" y2="${midY + rExit + 18}" stroke="#a855f7" stroke-width="1" />
+          <text x="${(xThroat + xExit) / 2 - 25}" y="${midY + rExit + 32}" fill="#a855f7" font-size="10" font-family="'JetBrains Mono', monospace">Lnoz: ${Lnoz_mm.toFixed(0)} mm</text>
 
-          <text x="${(xFace + xCylEnd) / 2 - 40}" y="${midY + 4}" fill="rgba(255,255,255,0.4)" font-size="11.5" font-family="'Inter', sans-serif" font-weight="700" letter-spacing="1">COMBUSTOR BARREL</text>
-          <text x="${xThroat - 16}" y="${midY - rT - wallPx - chPx - 12}" fill="#eab308" font-size="10" font-family="'Inter', sans-serif" font-weight="700">THROAT</text>
-
-          <text x="${xExit - 20}" y="${midY - rExit - wallPx - chPx - 10}" fill="#10b981" font-size="10.5" font-family="'Inter', sans-serif" font-weight="700">REGEN CHANNELS ◄</text>
+          <!-- Section Titles -->
+          <text x="${(xFace + xCylEnd) / 2 - 35}" y="${midY + 4}" fill="rgba(255,255,255,0.4)" font-size="10.5" font-family="'Inter', sans-serif" font-weight="700">CHAMBER</text>
+          <text x="${(xThroat + xExit) / 2 - 35}" y="${midY + 4}" fill="rgba(192, 132, 252, 0.7)" font-size="10.5" font-family="'Inter', sans-serif" font-weight="700">SUPERSONIC NOZZLE</text>
         </svg>
       `;
 

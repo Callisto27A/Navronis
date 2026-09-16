@@ -119,7 +119,13 @@ from kryptonis.propulsion_equations.injector import (
     ShearCoaxialElement,
 )
 
-__version__ = "0.3.0"
+from kryptonis.propulsion_equations.nozzle import (
+    standard_atmosphere,
+    NozzleDesign,
+    NozzleResult,
+)
+
+__version__ = "0.4.0"
 __all__ = [
     # Units & result containers
     "Result", "Status", "EvidenceLevel", "Verification", "Validation", "Assumption",
@@ -156,4 +162,6 @@ __all__ = [
     "InjectorDesign", "ShearCoaxialElement",
     # Day 3: Regenerative Cooling Jacket API
     "RegenCoolingJacket", "RegenChannelResult",
+    # Day 4: Supersonic Nozzle & Altitude Performance API
+    "standard_atmosphere", "NozzleDesign", "NozzleResult",
 ]

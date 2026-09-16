@@ -5,9 +5,9 @@
 [![Live Web App](https://img.shields.io/badge/Live%20Demo-Interactive%20Web%20App-blueviolet.svg?style=for-the-badge&logo=firefox)](https://callisto27a.github.io/Navronis/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-brightgreen.svg)](https://python.org)
-[![Build & Test](https://img.shields.io/badge/Tests-35%20Passed-success.svg)](#running-tests--verification)
+[![Build & Test](https://img.shields.io/badge/Tests-62%20Passed-success.svg)](#running-tests--verification)
 [![Engineering Pedigree](https://img.shields.io/badge/Physics-Strict%20Provenance-orange.svg)](#primary-literature--pedigree)
-[![Release](https://img.shields.io/badge/Release-v0.3.0%20(Day%203)-blue.svg)](https://github.com/Callisto27A/Navronis/releases)
+[![Release](https://img.shields.io/badge/Release-v0.4.0%20(Day%204)-blue.svg)](https://github.com/Callisto27A/Navronis/releases)
 
 **An authority-controlled, first-principles liquid rocket preliminary propulsion analytical toolkit with primary literature provenance.**
 
@@ -16,6 +16,7 @@
 [Step-by-Step Guide](#step-by-step-usage-instructions) •
 [4 Canonical Injectors](#the-4-canonical-injector-families) •
 [Day 3: Cooling Channels](#day-3-regenerative-cooling-channels) •
+[Day 4: Supersonic Nozzle](#day-4-supersonic-nozzle-aerodynamics--altitude-engine) •
 [Governing Equations](#governing-equations--literature-provenance) •
 [Community Issues](#community-auditing--open-issues) •
 [Architecture](#architecture--project-structure)
@@ -48,7 +49,7 @@ Most preliminary rocket propulsion scripts in circulation rely on undocumented c
 |---|---|---|---|
 | **Day 1: Combustor Assembly** | 🟢 **Released (`v0.1.0`)** | Choked sonic throat continuity, Humble contraction ratio, barrel length, stay time, Bartz throat convective heat flux, NASA SP-194 acoustic cavity buzz modes (1T, 1R, 1L), ASME Section VIII hoop wall thickness. | NASA SP-125, Bartz (1957), NASA SP-194, ASME Sec VIII |
 | **Day 2: 4 Canonical Injectors** | 🟢 **Released (`v0.2.0`)** | Torricelli hydraulics, chugging feed-system acoustic decoupling ($\Delta P / P_c \ge 15\%$), element packaging pitch, momentum flux ratio $J$, swirl sheet breakup, pintle momentum deflection, droplet atomization Sauter Mean Diameter ($D_{32}$). | NASA SP-194, Yang et al. (2004), Bazarov & Yang (1998), Dressler (2000), Rupe (1956) |
-| **Day 3: Regen Cooling Channels** | 🟢 **Released (`v0.3.0`)** | Milled rectangular channel aspect ratio, Haaland friction factor, Gnielinski turbulent forced convection, fin efficiency enhancement ($\eta_{fin}$), 3-resistance conjugate wall thermal equilibrium ($T_{wg}$, $T_{wc}$), Darcy-Weisbach $\Delta P$, bulk $\Delta T$, and thermal-structural yield margin. | NASA SP-8087, Gnielinski (1976), Haaland (1983), Bartz (1957), Incropera |
+| **Day 3: Regen Cooling Channels** | 🟢 **Released (`v0.4.0`)** | Milled rectangular channel aspect ratio, Haaland friction factor, Gnielinski turbulent forced convection, fin efficiency enhancement ($\eta_{fin}$), 3-resistance conjugate wall thermal equilibrium ($T_{wg}$, $T_{wc}$), Darcy-Weisbach $\Delta P$, bulk $\Delta T$, and thermal-structural yield margin. | NASA SP-8087, Gnielinski (1976), Haaland (1983), Bartz (1957), Incropera |
 | **Live Browser Web Sizer** | 🟢 **Live** | Interactive client-side UI hosted on GitHub Pages. Real-time SVG CAD cross-section rendering with cooling channels, propellant presets, and live 35-test verification matrix. | Client-side pure HTML5/SVG/JS |
 | **Community Issue Tracker** | 🟢 **Active** | 5 open peer-review issues on GitHub for literature verification, atomization benchmarking, and thermal models. | GitHub Issues #1–#5 |
 
@@ -263,7 +264,7 @@ pytest tests/ -v
 |---|---|---|---|
 | [**#1**](https://github.com/Callisto27A/Navronis/issues/1) | **Chamber / Heat Transfer** | Primary Literature Review: Contraction Ratio & Bartz Heat Flux Boundary Limits | 🟢 Open |
 | [**#2**](https://github.com/Callisto27A/Navronis/issues/2) | **Injectors / Atomization** | Benchmarking Droplet SMD ($D_{32}$) Models Against Experimental Cold-Flow Data | 🟢 Open |
-| [**#3**](https://github.com/Callisto27A/Navronis/issues/3) | **Thermal / Cooling** | Component 3: Axial Bartz Thermal Marching & Regenerative Cooling Channels | 🟢 **Implemented (`v0.3.0`)** |
+| [**#3**](https://github.com/Callisto27A/Navronis/issues/3) | **Thermal / Cooling** | Component 3: Axial Bartz Thermal Marching & Regenerative Cooling Channels | 🟢 **Implemented (`v0.4.0`)** |
 | [**#4**](https://github.com/Callisto27A/Navronis/issues/4) | **Propellants / Presets** | Good First Issue: Add Storable Monopropellants & Hypergolic Presets (N₂O₄/MMH, Hydrazine) | 🟢 Open |
 | [**#5**](https://github.com/Callisto27A/Navronis/issues/5) | **Verification & Testing** | Equation Verification Matrix: Cross-Validation with CEA, NASA SP-125 Datasets, and Cold-Flow Benchmarks | 🟢 Open |
 
@@ -276,7 +277,7 @@ Navronis/
 ├── src/
 │   └── kryptonis/
 │       └── propulsion_equations/
-│           ├── __init__.py           # Unified top-level API (v0.3.0)
+│           ├── __init__.py           # Unified top-level API (v0.4.0)
 │           ├── combustor.py          # Day 1: CombustorDesign & CombustorResult
 │           ├── injector.py           # Day 2: 4 Canonical Injector Families
 │           ├── regen_channel.py      # Day 3: RegenCoolingJacket & Conjugate Wall Solver

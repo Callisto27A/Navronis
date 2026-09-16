@@ -30,6 +30,7 @@ from kryptonis.propulsion_equations.chamber_acoustics import (
     first_radial_frequency,
     first_longitudinal_frequency,
 )
+from kryptonis.propulsion_equations.nozzle import NozzleDesign
 
 
 def run_chamber_sizing(
@@ -408,14 +409,51 @@ def run_cooling_sizing(
     return 0
 
 
+def run_nozzle_sizing(
+    thrust_n: float,
+    pc_bar: float,
+    propellants: str = "LOX/RP-1",
+    expansion_ratio: float = 20.0,
+    altitude_m: float = 0.0,
+    nozzle_type: str = "bell",
+    theta_n_deg: float = 30.0,
+    theta_e_deg: float = 8.0,
+    divergent_half_angle_deg: float = 15.0,
+    bell_fractional_length: float = 0.80,
+    export_json_path: str | None = None,
+    export_csv_path: str | None = None,
+) -> int:
+    design = NozzleDesign(
+        expansion_ratio=expansion_ratio,
+        chamber_pressure=pc_bar * 1.0e5,
+        altitude=altitude_m,
+        thrust=thrust_n,
+        propellant=propellants,
+        nozzle_type=nozzle_type,
+        divergent_half_angle_deg=divergent_half_angle_deg,
+        initial_wall_angle_deg=theta_n_deg,
+        exit_wall_angle_deg=theta_e_deg,
+        bell_fractional_length=bell_fractional_length,
+    )
+    res = design.solve()
+    print(res.summary())
+    if export_json_path:
+        res.export_json(export_json_path)
+        print(f"Exported nozzle sizing to JSON: {export_json_path}")
+    if export_csv_path:
+        res.export_csv(export_csv_path)
+        print(f"Exported contour coordinates to CSV: {export_csv_path}")
+    return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="navronis",
         description="Authority-controlled analytical sizing for liquid rocket engine thrust chambers and injectors.",
     )
     parser.add_argument(
-        "--subsystem", default="chamber", choices=["chamber", "injector", "cooling", "regen"],
-        help="Subsystem to size: 'chamber', 'injector', or 'cooling'",
+        "--subsystem", default="chamber", choices=["chamber", "injector", "cooling", "regen", "nozzle", "aero"],
+        help="Subsystem to size: 'chamber', 'injector', 'cooling', or 'nozzle'",
     )
     parser.add_argument(
         "--injector-type", default="coaxial", choices=["coaxial", "swirl", "pintle", "impinging"],
@@ -483,6 +521,22 @@ def main() -> None:
         help="Nozzle contour type (default: bell)",
     )
     parser.add_argument(
+        "--altitude", type=float, default=0.0,
+        help="Flight altitude in meters above sea level (default: 0.0 m)",
+    )
+    parser.add_argument(
+        "--theta-n", type=float, default=30.0,
+        help="Rao bell initial expansion angle in degrees (default: 30.0 deg)",
+    )
+    parser.add_argument(
+        "--theta-e", type=float, default=8.0,
+        help="Rao bell exit lip angle in degrees (default: 8.0 deg)",
+    )
+    parser.add_argument(
+        "--fractional-length", type=float, default=0.80,
+        help="Fraction of equivalent 15-deg cone length (default: 0.80)",
+    )
+    parser.add_argument(
         "--yield-strength", type=float, default=280.0,
         help="Liner material yield strength in MPa (default: 280.0 MPa)",
     )
@@ -538,6 +592,23 @@ def main() -> None:
                 injector_type=args.injector_type,
                 n_elements=args.elements,
                 delta_p_ratio=args.delta_p_ratio,
+            )
+        )
+
+    if args.subsystem in {"nozzle", "aero"}:
+        sys.exit(
+            run_nozzle_sizing(
+                thrust_n=args.thrust,
+                pc_bar=args.pc,
+                propellants=args.propellants,
+                expansion_ratio=args.expansion_ratio,
+                altitude_m=args.altitude,
+                nozzle_type=args.nozzle,
+                theta_n_deg=args.theta_n,
+                theta_e_deg=args.theta_e,
+                bell_fractional_length=args.fractional_length,
+                export_json_path=args.export_json,
+                export_csv_path=args.export_csv,
             )
         )
 
