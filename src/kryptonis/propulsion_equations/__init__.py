@@ -40,6 +40,7 @@ from kryptonis.propulsion_equations.chamber import (
     vandenkerckhove,
     c_star_ideal,
     THERMOCHEMICAL_PRESETS,
+    CEA_BENCHMARK_PRESETS_ALT,
     get_thermochemical_preset,
 )
 
@@ -128,7 +129,7 @@ __all__ = [
     # Chamber sizing & Thermochemistry
     "throat_area", "throat_diameter", "chamber_diameter", "chamber_volume",
     "convergent_volume", "cylinder_length", "cylindrical_length", "vandenkerckhove", "c_star_ideal",
-    "THERMOCHEMICAL_PRESETS", "get_thermochemical_preset",
+    "THERMOCHEMICAL_PRESETS", "CEA_BENCHMARK_PRESETS_ALT", "get_thermochemical_preset",
     # Gas dynamics & Aerodynamics
     "calculate_area_ratio", "calculate_mach_from_area_ratio",
     # Contour & losses

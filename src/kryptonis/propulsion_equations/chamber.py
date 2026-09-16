@@ -72,7 +72,7 @@ from kryptonis.propulsion_equations.units import (
 __all__ = [
     "SP125", "HUMBLE", "EPS_C_ABSOLUTE_MIN", "EPS_C_ABSOLUTE_MAX",
     "EPS_C_TURBOPUMP", "EPS_C_PRESSURE_FED", "L_STAR_TABLE_4_1",
-    "THERMOCHEMICAL_PRESETS", "get_thermochemical_preset",
+    "THERMOCHEMICAL_PRESETS", "CEA_BENCHMARK_PRESETS_ALT", "get_thermochemical_preset",
     "throat_area", "throat_diameter",
     "contraction_ratio", "characteristic_length", "chamber_volume",
     "chamber_diameter", "convergent_length", "convergent_volume",
@@ -160,9 +160,13 @@ _FUEL_TO_TABLE_ROW: dict[str, str | None] = {
     "LCH4": None,          # NO ROW EXISTS
     "GCH4": None,          # NO ROW EXISTS
     "MMH": "N2O4/hydrazine-base",
+    "N2O4/MMH": "N2O4/hydrazine-base",
     "Hydrazine": "N2O4/hydrazine-base",
+    "HYDRAZINE": "N2O4/hydrazine-base",
     "N2H4": "N2O4/hydrazine-base",
     "Ethanol": None,
+    "ETHANOL": None,
+    "N2O/ETHANOL": None,
 }
 
 #: Nominal CEA-verified thermochemical presets for cryogenic bipropellants,
@@ -242,15 +246,65 @@ THERMOCHEMICAL_PRESETS: dict[str, dict[str, Any]] = {
     },
 }
 
+#: Alternative CEA benchmark presets (Deck B: Sea-level Isp, Pc=15 bar, O/F=4.5 for N2O/Ethanol).
+#: Preserved from PR #8 audit for comparative regression and state-dependent verification.
+CEA_BENCHMARK_PRESETS_ALT: dict[str, dict[str, Any]] = {
+    "N2O4/MMH": {
+        "gamma": 1.25,
+        "mw": 0.0218,
+        "tc": 3150.0,
+        "l_star": 0.83,
+        "c_star": 1740.0,
+        "of": 1.65,
+        "isp": 285.0,  # Sea-level baseline
+        "rho_ox": 1442.0,
+        "rho_f": 875.0,
+        "coolant": "MMH",
+        "notes": "PR #8 CEA Deck B: Pc=15 bar, sea-level expansion",
+    },
+    "Hydrazine": {
+        "gamma": 1.28,
+        "mw": 0.0130,
+        "tc": 1200.0,
+        "l_star": 0.75,
+        "c_star": 1340.0,
+        "of": 0.0,
+        "isp": 220.0,  # Sea-level baseline
+        "rho_ox": 1004.0,
+        "rho_f": 1004.0,
+        "coolant": "HYDRAZINE",
+        "notes": "PR #8 CEA Deck B: Catalytic monopropellant decomposition",
+    },
+    "N2O/Ethanol": {
+        "gamma": 1.22,
+        "mw": 0.0245,
+        "tc": 2900.0,
+        "l_star": 1.15,
+        "c_star": 1630.0,
+        "of": 4.5,     # Oxidizer-rich shifted mixture ratio
+        "isp": 260.0,  # Sea-level baseline
+        "rho_ox": 1220.0,
+        "rho_f": 789.0,
+        "coolant": "ETHANOL",
+        "notes": "PR #8 CEA Deck B: O/F=4.5 oxidizer-rich operating point",
+    },
+}
 
-def get_thermochemical_preset(propellant: str) -> dict[str, Any]:
+
+def get_thermochemical_preset(
+    propellant: str,
+    *,
+    use_alt_deck: bool = False,
+) -> dict[str, Any]:
     r"""Retrieve nominal thermochemical preset with propellant alias and case normalization.
 
     Parameters
     ----------
     propellant : str
         Propellant combination string (e.g., 'LOX/RP-1', 'LOX/CH4', 'N2O4/MMH',
-        'Hydrazine', 'N2H4', 'N2O/Ethanol').
+        'Hydrazine', 'N2H4', 'N2O/Ethanol', 'NTO/MMH', 'AEROZINE50').
+    use_alt_deck : bool, optional
+        If True, return the alternative CEA benchmark deck (Deck B from PR #8).
 
     Returns
     -------
@@ -264,7 +318,20 @@ def get_thermochemical_preset(propellant: str) -> dict[str, Any]:
         .replace("METHANE", "CH4")
         .replace("KEROSENE", "RP-1")
         .replace("N2H4", "HYDRAZINE")
+        .replace("NTO/MMH", "N2O4/MMH")
+        .replace("AEROZINE50", "N2O4/MMH")
+        .replace("N2O/ETOH", "N2O/ETHANOL")
+        .replace("MONOPROPELLANT_HYDRAZINE", "HYDRAZINE")
     )
+    if use_alt_deck:
+        alt_map: dict[str, dict[str, Any]] = {
+            "N2O4/MMH": CEA_BENCHMARK_PRESETS_ALT["N2O4/MMH"],
+            "HYDRAZINE": CEA_BENCHMARK_PRESETS_ALT["Hydrazine"],
+            "N2O/ETHANOL": CEA_BENCHMARK_PRESETS_ALT["N2O/Ethanol"],
+        }
+        if key in alt_map:
+            return alt_map[key]
+
     preset_map: dict[str, dict[str, Any]] = {
         "LOX/RP-1": THERMOCHEMICAL_PRESETS["LOX/RP-1"],
         "LOX/CH4": THERMOCHEMICAL_PRESETS["LOX/CH4"],
@@ -414,17 +481,17 @@ def characteristic_length(
                                 f"guessed: it sets chamber volume, length and "
                                 f"residence time.")
         if row is None:
-            # Methane. There is no row. Do NOT invent one.
+            # Propellant with no SP-125 Table 4-1 row (e.g., Methane, Ethanol). Do NOT invent one.
             return Result(
                 float("nan"), "m", "CAN-L-STAR",
                 status=Status.INSUFFICIENT_EVIDENCE, source=SP125,
                 source_locator="Table 4-1, p.87",
                 evidence_level=EvidenceLevel.E0,
                 validity_domain=f"Table 4-1 envelope {L_STAR_ENVELOPE_IN} in",
-                notes=(f"SP-125 Table 4-1 has NO METHANE ROW -- verified by "
+                notes=(f"SP-125 Table 4-1 has NO {fuel!r} ROW -- verified by "
                        f"listing all 11 propellant combinations. {fuel!r} is "
                        f"therefore not covered by the cited source. Supply "
-                       f"L* explicitly, or acquire a LOX/CH4 source."),
+                       f"L* explicitly, or acquire a {fuel!r} source."),
                 inputs={"fuel": fuel})
         lo_in, hi_in = L_STAR_TABLE_4_1[row]
         mid_in = 0.5 * (lo_in + hi_in)
