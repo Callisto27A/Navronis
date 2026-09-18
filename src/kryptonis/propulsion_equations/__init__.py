@@ -113,6 +113,11 @@ from kryptonis.propulsion_equations.injector import (
     injector_pressure_drop_stiffness,
     size_shear_coaxial,
     size_swirl_coaxial,
+    abramovich_phi_from_A,
+    abramovich_mu_from_phi,
+    calculate_coaxial_swirl_injector,
+    size_bicentrifugal_swirl_injector,
+    supercritical_droplet_transition_factor,
     size_pintle_injector,
     size_impinging_doublet,
     InjectorDesign,
@@ -155,10 +160,13 @@ __all__ = [
     "first_tangential_frequency", "first_radial_frequency", "first_longitudinal_frequency",
     # High-level Combustor API
     "CombustorDesign", "CombustorResult",
-    # 4 Canonical Injector Families API
+    # Injector Families & Swirl Theory API
     "orifice_area", "orifice_diameter", "orifice_velocity",
     "injector_pressure_drop_stiffness", "size_shear_coaxial",
-    "size_swirl_coaxial", "size_pintle_injector", "size_impinging_doublet",
+    "size_swirl_coaxial", "abramovich_phi_from_A", "abramovich_mu_from_phi",
+    "calculate_coaxial_swirl_injector", "size_bicentrifugal_swirl_injector",
+    "supercritical_droplet_transition_factor",
+    "size_pintle_injector", "size_impinging_doublet",
     "InjectorDesign", "ShearCoaxialElement",
     # Day 3: Regenerative Cooling Jacket API
     "RegenCoolingJacket", "RegenChannelResult",

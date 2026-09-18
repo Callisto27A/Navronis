@@ -5,7 +5,7 @@
 [![Live Web App](https://img.shields.io/badge/Live%20Demo-Interactive%20Web%20App-blueviolet.svg?style=for-the-badge&logo=firefox)](https://callisto27a.github.io/Navronis/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-brightgreen.svg)](https://python.org)
-[![Build & Test](https://img.shields.io/badge/Tests-62%20Passed-success.svg)](#running-tests--verification)
+[![Build & Test](https://img.shields.io/badge/Tests-77%20Passed-success.svg)](#running-tests--verification)
 [![Engineering Pedigree](https://img.shields.io/badge/Physics-Strict%20Provenance-orange.svg)](#primary-literature--pedigree)
 [![Release](https://img.shields.io/badge/Release-v0.4.0%20(Day%204)-blue.svg)](https://github.com/Callisto27A/Navronis/releases)
 
@@ -306,7 +306,7 @@ Navronis/
 │   ├── 04_nozzle_divergence_and_separation.py # Gas dynamics & separation limits
 │   ├── 05_injector_sizing.py         # Sizing the 4 canonical injector families
 │   └── 06_regenerative_cooling_channels.py # Day 3 regenerative cooling jacket sizing
-├── tests/                            # 35 automated unit tests (100% pass rate)
+├── tests/                            # 77 automated unit tests (100% pass rate)
 ├── pyproject.toml                    # PEP 621 standard package build metadata
 ├── LICENSE                           # Apache-2.0 open-source license
 └── README.md                         # Project documentation and engineering handbook

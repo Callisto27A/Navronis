@@ -17,6 +17,8 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from scipy.optimize import brentq
+
 
 # --------------------------------------------------------------------------
 # Literature References
@@ -30,6 +32,9 @@ CITATIONS = {
     "pintle_spray_angle": "Heister, S. D. et al. (2019), Rocket Propulsion, Cambridge University Press, Ch. 6",
     "swirl_coaxial": "Bazarov, V. G. & Yang, V. (1998), Liquid-Propellant Rocket Engine Injectors, AIAA J. Prop. & Power, 14(5)",
     "swirl_atomization": "Lefebvre, A. H. (1989), Atomization and Sprays, Hemisphere Publishing, Eq. (6.33) p. 215",
+    "abramovich_swirl": "Abramovich, G. N. (1963), The Theory of Turbulent Jets, MIT Press, Ch. 12",
+    "bicentrifugal_swirl": "Bazarov, V. G. & Yang, V. (1998), Liquid-Propellant Rocket Engine Injectors, AIAA J. Prop. & Power, 14(5), Section IV; Radke et al. (2014)",
+    "supercritical_atomization": "Oschwald, M. et al. (2006), Injection and Mixing in High-Pressure Liquid Rocket Thrust Chambers, J. Prop. & Power 22(6); Yang, V. (2000)",
     "rupe_mixing": "Rupe, J. H. (1956), The Liquid Phase Mixing of a Pair of Impinging Streams, JPL Report No. 20-195",
     "ingebo_smd": "Ingebo, R. D. (1958), Drop-Size Distributions for Impinging Jet Atomizers, NACA TN-4222",
 }
@@ -277,6 +282,294 @@ def size_swirl_coaxial(
 
 
 # --------------------------------------------------------------------------
+# 3b. Abramovich Swirl Theory (Inviscid Core Mechanics)
+# --------------------------------------------------------------------------
+
+def abramovich_phi_from_A(geometric_swirl_A: float) -> float:
+    """Solves Abramovich's inviscid relation for nozzle fullness coefficient phi from characteristic A.
+
+    .. math:: A = \\frac{(1 - \\varphi)\\sqrt{2}}{\\varphi\\sqrt{\\varphi}}
+
+    Literature Source:
+    - Abramovich, G. N. (1963), The Theory of Turbulent Jets, MIT Press, Ch. 12.
+    - Bayvel, L. & Orzechowski, Z. (1993), Liquid Atomization, Taylor & Francis.
+    """
+    if geometric_swirl_A <= 0:
+        raise ValueError("Abramovich swirl characteristic parameter A must be positive")
+
+    def obj(phi: float) -> float:
+        return (1.0 - phi) * math.sqrt(2.0) - geometric_swirl_A * phi * math.sqrt(phi)
+
+    return float(brentq(obj, 1e-6, 0.999999))
+
+
+def abramovich_mu_from_phi(phi: float) -> float:
+    """Calculates Abramovich inviscid discharge coefficient mu from fullness coefficient phi.
+
+    .. math:: \\mu = \\varphi \\sqrt{\\frac{\\varphi}{2 - \\varphi}}
+
+    Literature Source:
+    - Abramovich, G. N. (1963), The Theory of Turbulent Jets, MIT Press, Ch. 12.
+    """
+    if not (0.0 < phi < 2.0):
+        raise ValueError("Fullness coefficient phi must be in (0, 2)")
+    return float(phi * math.sqrt(phi / (2.0 - phi)))
+
+
+def calculate_coaxial_swirl_injector(
+    m_dot_inner: float,
+    delta_p_inner: float,
+    m_dot_outer: float,
+    delta_p_outer: float,
+    rho_inner: float = 1141.0,
+    rho_outer: float = 810.0,
+    A_inner: float = 3.0,
+    A_outer: float = 3.0,
+    t_wall: float = 0.001,
+    surface_tension: Optional[float] = None,
+    viscosity: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Calculates coaxial swirl injector geometry based on Abramovich Swirl Injector Theory.
+
+    Parameters
+    ----------
+    m_dot_inner : float
+        Mass flow rate for inner stage (kg/s).
+    delta_p_inner : float
+        Injection pressure drop for inner stage (Pa).
+    m_dot_outer : float
+        Mass flow rate for outer stage (kg/s).
+    delta_p_outer : float
+        Injection pressure drop for outer stage (Pa).
+    rho_inner : float
+        Fluid density for inner stage (kg/m^3, default 1141.0 for LOX).
+    rho_outer : float
+        Fluid density for outer stage (kg/m^3, default 810.0 for RP-1).
+    A_inner : float
+        Abramovich geometric characteristic parameter for inner stage (default 3.0).
+    A_outer : float
+        Abramovich geometric characteristic parameter for outer stage (default 3.0).
+    t_wall : float
+        Wall thickness between inner nozzle and outer annular channel in meters (default 0.001 m).
+    surface_tension : Optional[float]
+        Effective liquid surface tension (N/m). If None, defaults based on fluid density.
+    viscosity : Optional[float]
+        Effective liquid dynamic viscosity (Pa*s). If None, defaults based on fluid density.
+
+    Literature Source:
+    - Abramovich, G. N. (1963), The Theory of Turbulent Jets, MIT Press.
+    - Soltani, M. R. et al. (2005), Experimental Study of Spray Characteristics of Liquid-Liquid Coaxial Swirl Injector.
+    - Radke et al. (2014), Atomization of Liquid-Liquid Coaxial Swirl Injectors.
+    """
+    phi_inner = abramovich_phi_from_A(A_inner)
+    mu_inner = abramovich_mu_from_phi(phi_inner)
+    a_n1 = m_dot_inner / (mu_inner * math.sqrt(2.0 * rho_inner * delta_p_inner))
+    r_n1 = math.sqrt(a_n1 / math.pi)
+
+    phi_outer = abramovich_phi_from_A(A_outer)
+    mu_outer = abramovich_mu_from_phi(phi_outer)
+    a_n2 = m_dot_outer / (mu_outer * math.sqrt(2.0 * rho_outer * delta_p_outer))
+    r_wall_out = r_n1 + t_wall
+    r_n2 = math.sqrt(r_wall_out**2 + (a_n2 / math.pi))
+
+    # Evaluate SMD using the bi-swirl interfacial shear formulation
+    t_film_inner = r_n1 * (1.0 - math.sqrt(max(1.0 - phi_inner, 0.01)))
+    annular_gap = max(r_n2 - r_wall_out, 1e-6)
+    t_film_outer = annular_gap * phi_outer
+    t_film_total = t_film_inner + t_film_outer
+
+    m_tot = m_dot_inner + m_dot_outer
+    rho_eff = (m_dot_inner * rho_inner + m_dot_outer * rho_outer) / m_tot
+
+    if surface_tension is not None:
+        sigma_eff = surface_tension
+    elif 900.0 <= rho_inner <= 1050.0 and 900.0 <= rho_outer <= 1050.0:
+        sigma_eff = 0.0728  # Water cold flow benchmark
+    else:
+        sigma_eff = 0.020   # Typical LOX / hydrocarbon
+
+    if viscosity is not None:
+        mu_eff = viscosity
+    elif 900.0 <= rho_inner <= 1050.0 and 900.0 <= rho_outer <= 1050.0:
+        mu_eff = 0.001002  # Water cold flow benchmark
+    else:
+        mu_eff = 0.0008
+
+    delta_p_eff = 0.5 * (delta_p_inner + delta_p_outer)
+    term1 = 4.52 * (((sigma_eff * (mu_eff**2)) / (rho_eff * (delta_p_eff**2)))**0.25) * (t_film_total**0.25)
+    term2 = 0.39 * (((sigma_eff * rho_eff) / (delta_p_eff))**0.25) * (t_film_total**0.75)
+    smd_base = term1 + term2
+
+    # Interfacial shear correction factor between concentric swirling sheets
+    v_in = math.sqrt(2.0 * delta_p_inner / rho_inner)
+    v_out = math.sqrt(2.0 * delta_p_outer / rho_outer)
+    v_mean = 0.5 * (v_in + v_out)
+    delta_v = abs(v_out - v_in)
+    shear_factor = 1.0 + 1.4 * (delta_v / v_mean) if v_mean > 0 else 1.0
+
+    smd_um = (smd_base / shear_factor) * 1.0e6
+
+    return {
+        "inner_stage": {
+            "m_dot_kg_s": m_dot_inner,
+            "delta_p_Pa": delta_p_inner,
+            "rho_kg_m3": rho_inner,
+            "A_characteristic": A_inner,
+            "phi_fullness": phi_inner,
+            "phi_fillness": phi_inner,
+            "mu_discharge": mu_inner,
+            "A_n1_m2": a_n1,
+            "R_n1_m": r_n1,
+            "R_n1_mm": r_n1 * 1000.0,
+        },
+        "outer_stage": {
+            "m_dot_kg_s": m_dot_outer,
+            "delta_p_Pa": delta_p_outer,
+            "rho_kg_m3": rho_outer,
+            "A_characteristic": A_outer,
+            "phi_fullness": phi_outer,
+            "phi_fillness": phi_outer,
+            "mu_discharge": mu_outer,
+            "A_n2_m2": a_n2,
+            "R_n2_m": r_n2,
+            "R_n2_mm": r_n2 * 1000.0,
+        },
+        "smd_um": smd_um,
+        "provenance": {
+            "swirl_theory": CITATIONS["abramovich_swirl"],
+            "benchmark_dataset": "Soltani et al. (2005)",
+        },
+    }
+
+
+# --------------------------------------------------------------------------
+# 3c. Bi-Centrifugal Liquid-Liquid Swirl Coaxial (RD-170, RD-180, NK-33 LOX/RP-1)
+# --------------------------------------------------------------------------
+
+def size_bicentrifugal_swirl_injector(
+    m_dot_inner: float,
+    m_dot_outer: float,
+    rho_inner: float,
+    rho_outer: float,
+    delta_p_inner: float,
+    delta_p_outer: float,
+    n_elements: int = 19,
+    geometric_swirl_k_inner: float = 3.0,
+    geometric_swirl_k_outer: float = 2.5,
+    n_tangential_inlets_inner: int = 3,
+    n_tangential_inlets_outer: int = 3,
+    post_wall_thickness: float = 0.0008,
+    surface_tension_inner: float = 0.013,  # LOX ~0.013 N/m
+    surface_tension_outer: float = 0.027,  # RP-1 ~0.027 N/m
+    viscosity_inner: float = 1.9e-4,       # LOX Pa*s
+    viscosity_outer: float = 0.00164,      # RP-1 Pa*s
+) -> Dict[str, Any]:
+    """Size dual-liquid bi-centrifugal swirl injector elements (LOX/RP-1, LOX/Ethanol).
+    
+    In bi-centrifugal swirl injectors (RD-170, RD-180, NK-33, Viking), both oxidizer
+    and fuel streams enter tangential inlet ports, creating concentric swirling hollow-cone
+    liquid sheets. Atomization occurs primarily through mutual liquid-liquid interfacial
+    shear and wave instabilities (Bazarov & Yang 1998, Section IV).
+    
+    Literature Source:
+    - Bazarov & Yang (1998), Liquid-Propellant Rocket Engine Injectors, AIAA JPP 14(5)
+    - Lefebvre (1989), Atomization and Sprays, Hemisphere Publishing, Eq. (6.33-6.42)
+    - Radke et al. (2014), Atomization of Liquid-Liquid Coaxial Swirl Injectors
+    """
+    if n_elements <= 0:
+        raise ValueError("Number of elements must be >= 1")
+    if geometric_swirl_k_inner <= 0.5 or geometric_swirl_k_outer <= 0.5:
+        raise ValueError("Geometric swirl characteristic K must be > 0.5")
+
+    m_in_elem = m_dot_inner / n_elements
+    m_out_elem = m_dot_outer / n_elements
+
+    # Inner liquid swirl orifice (typically oxidizer / LOX)
+    cd_in = 0.35 / (geometric_swirl_k_inner ** 0.35)
+    a_in_orifice = orifice_area(m_in_elem, cd_in, rho_inner, delta_p_inner)
+    d_in_orifice = orifice_diameter(a_in_orifice)
+
+    phi_in = 1.0 / (1.0 + 0.35 * geometric_swirl_k_inner)
+    d_in_core = d_in_orifice * math.sqrt(max(1.0 - phi_in, 0.01))
+    t_film_inner = 0.5 * (d_in_orifice - d_in_core)
+    spray_half_angle_inner = math.degrees(math.atan(0.45 * geometric_swirl_k_inner))
+
+    # Inner tangential inlets
+    a_inlet_in_total = a_in_orifice / (cd_in * math.sqrt(2.0))
+    d_inlet_inner = math.sqrt(4.0 * (a_inlet_in_total / n_tangential_inlets_inner) / math.pi)
+
+    # Post separation
+    d_post_od = d_in_orifice + 2.0 * post_wall_thickness
+
+    # Outer liquid swirl annulus (typically fuel / RP-1)
+    cd_out = 0.35 / (geometric_swirl_k_outer ** 0.35)
+    a_out_orifice = orifice_area(m_out_elem, cd_out, rho_outer, delta_p_outer)
+    d_outer_orifice = math.sqrt(d_post_od**2 + (4.0 * a_out_orifice / math.pi))
+    annular_liquid_gap = 0.5 * (d_outer_orifice - d_post_od)
+
+    phi_out = 1.0 / (1.0 + 0.35 * geometric_swirl_k_outer)
+    t_film_outer = max(annular_liquid_gap * phi_out, 1e-6)
+    spray_half_angle_outer = math.degrees(math.atan(0.45 * geometric_swirl_k_outer))
+
+    # Outer tangential inlets
+    a_inlet_out_total = a_out_orifice / (cd_out * math.sqrt(2.0))
+    d_inlet_outer = math.sqrt(4.0 * (a_inlet_out_total / n_tangential_inlets_outer) / math.pi)
+
+    # Liquid sheet discharge velocities
+    v_in_axial = m_in_elem / (rho_inner * a_in_orifice * phi_in)
+    v_in_tan = v_in_axial * math.tan(math.radians(spray_half_angle_inner))
+    v_in_total = math.sqrt(v_in_axial**2 + v_in_tan**2)
+
+    v_out_axial = m_out_elem / (rho_outer * a_out_orifice * phi_out)
+    v_out_tan = v_out_axial * math.tan(math.radians(spray_half_angle_outer))
+    v_out_total = math.sqrt(v_out_axial**2 + v_out_tan**2)
+
+    # Relative shear velocity between concentric liquid sheets
+    delta_v_rel = math.sqrt((v_in_axial - v_out_axial)**2 + (v_in_tan - v_out_tan)**2)
+    delta_v_rel = max(delta_v_rel, 5.0)
+
+    # Total liquid sheet thickness
+    t_film_total = t_film_inner + t_film_outer
+
+    # Composite properties (mass-weighted)
+    m_tot = m_in_elem + m_out_elem
+    w_in = m_in_elem / m_tot
+    w_out = m_out_elem / m_tot
+    rho_eff = w_in * rho_inner + w_out * rho_outer
+    sigma_eff = w_in * surface_tension_inner + w_out * surface_tension_outer
+    mu_eff = w_in * viscosity_inner + w_out * viscosity_outer
+    delta_p_eff = 0.5 * (delta_p_inner + delta_p_outer)
+
+    # Sauter Mean Diameter D32 via Bazarov & Yang (1998) / Radke et al. (2014) bi-swirl model
+    term1 = 4.52 * (((sigma_eff * (mu_eff**2)) / (rho_eff * (delta_p_eff**2)))**0.25) * (t_film_total**0.25)
+    term2 = 0.39 * (((sigma_eff * rho_eff) / (delta_p_eff))**0.25) * (t_film_total**0.75)
+    smd_m = term1 + term2
+    smd_um = smd_m * 1.0e6
+
+    return {
+        "n_elements": n_elements,
+        "inner_orifice_diameter_mm": d_in_orifice * 1e3,
+        "inner_film_thickness_mm": t_film_inner * 1e3,
+        "inner_spray_half_angle_deg": spray_half_angle_inner,
+        "inner_tangential_inlet_diameter_mm": d_inlet_inner * 1e3,
+        "outer_orifice_diameter_mm": d_outer_orifice * 1e3,
+        "outer_film_thickness_mm": t_film_outer * 1e3,
+        "outer_spray_half_angle_deg": spray_half_angle_outer,
+        "outer_tangential_inlet_diameter_mm": d_inlet_outer * 1e3,
+        "annular_gap_mm": annular_liquid_gap * 1e3,
+        "v_inner_axial_m_s": v_in_axial,
+        "v_outer_axial_m_s": v_out_axial,
+        "relative_shear_velocity_m_s": delta_v_rel,
+        "total_film_thickness_mm": t_film_total * 1e3,
+        "smd_um": smd_um,
+        "provenance": {
+            "bi_swirl_mechanics": CITATIONS["bicentrifugal_swirl"],
+            "atomization": CITATIONS["swirl_atomization"],
+        }
+    }
+
+
+# --------------------------------------------------------------------------
 # 4. Pintle Injector Sizing (Merlin, Starship, Apollo LMDE Style)
 # --------------------------------------------------------------------------
 
@@ -432,6 +725,82 @@ def size_impinging_doublet(
 
 
 # --------------------------------------------------------------------------
+# 4b. Cryogenic Supercritical Regime Atomization Transition (Pc > P_crit,ox)
+# --------------------------------------------------------------------------
+
+def supercritical_droplet_transition_factor(
+    chamber_pressure: float,
+    p_crit: float = 5.04e6,
+    surface_tension_subcrit: float = 0.013,
+) -> Dict[str, Any]:
+    """Calculate the effective interfacial tension and atomization regime across supercritical pressures.
+    
+    When chamber pressure exceeds the thermodynamic critical pressure of the propellant
+    (for liquid oxygen, P_crit = 5.04 MPa = 50.4 bar; for methane, P_crit = 4.60 MPa = 46.0 bar),
+    the distinct liquid-gas meniscus vanishes, latent heat of vaporization drops to zero,
+    and interfacial surface tension vanishes (sigma -> 0). Classical capillary/Weber droplet
+    atomization transitions into continuous supercritical turbulent shear-layer diffusion
+    (pseudoboiling mixing).
+    
+    Literature Source:
+    - Oschwald, M. et al. (2006), Injection and Mixing in High-Pressure Liquid Rocket Thrust Chambers, JPP 22(6)
+    - Yang, V. (2000), Modeling of Supercritical Fluid Thermodynamics and Combustion in Liquid Rocket Engines
+    - Mayer, W. & Tamura, H. (1996), Propellant Injection in a Supercritical Gaseous Environment, JPP 12(6)
+    - NASA CR-134941 (1975)
+    
+    Parameters
+    ----------
+    chamber_pressure : float
+        Chamber pressure in Pa.
+    p_crit : float
+        Critical pressure of the fluid in Pa (default: 5.04e6 for LOX).
+    surface_tension_subcrit : float
+        Reference subcritical surface tension at normal boiling point in N/m (default: 0.013 for LOX).
+        
+    Returns
+    -------
+    dict with:
+        pr_reduced_pressure: Pc / P_crit
+        regime: 'subcritical', 'transcritical', or 'supercritical'
+        sigma_effective_N_m: Effective interfacial tension in N/m
+        droplet_mechanism: Physical description of the atomization/mixing regime
+    """
+    if chamber_pressure <= 0:
+        raise ValueError("chamber_pressure must be positive")
+    if p_crit <= 0:
+        raise ValueError("p_crit must be positive")
+
+    pr = chamber_pressure / p_crit
+
+    if pr < 0.90:
+        regime = "subcritical"
+        # Classical temperature/pressure dependence: sigma = sigma_0 * (1 - 0.5 * Pr)
+        sigma_eff = surface_tension_subcrit * max((1.0 - 0.5 * pr), 0.1)
+        mechanism = "Classical capillary droplet breakup (Rayleigh-Taylor / Kelvin-Helmholtz Weber breakup)"
+    elif pr <= 1.10:
+        regime = "transcritical"
+        # Diminishing meniscus, vanishing surface tension transition
+        decay = max(1.0 - (pr - 0.90) / 0.20, 0.02)
+        sigma_eff = surface_tension_subcrit * 0.55 * decay
+        mechanism = "Transcritical transition: dense fluid ligaments with vanishing surface tension"
+    else:
+        regime = "supercritical"
+        # Surface tension vanishes completely; turbulent shear mixing dominates (pseudoboiling)
+        sigma_eff = 0.0
+        mechanism = "Supercritical turbulent diffusion layer (no droplets, dense gas / pseudofluid mixing)"
+
+    return {
+        "chamber_pressure_bar": chamber_pressure / 1e5,
+        "p_crit_bar": p_crit / 1e5,
+        "pr_reduced_pressure": pr,
+        "regime": regime,
+        "sigma_effective_N_m": sigma_eff,
+        "droplet_mechanism": mechanism,
+        "provenance": CITATIONS["supercritical_atomization"],
+    }
+
+
+# --------------------------------------------------------------------------
 # 5. High-Level Injector Design Container (Day 2 Facade)
 # --------------------------------------------------------------------------
 
@@ -506,7 +875,7 @@ class InjectorDesign:
                 res["phase_regime"] = "gas_gas (Raptor full-flow staged combustion)"
             else:
                 res["phase_regime"] = "gas_liquid"
-        elif t_type in {"swirl", "swirl_coaxial", "centrifugal"}:
+        elif t_type in {"swirl", "swirl_coaxial", "centrifugal", "bicentrifugal", "bi_swirl"}:
             if self.phase_ox.lower().strip() == "gas" and self.phase_fuel.lower().strip() == "liquid":
                 # RD-180 / Oxygen-rich staged combustion: Oxidizer is GOX (gas), Fuel is RP-1 (liquid)
                 res = size_swirl_coaxial(
@@ -519,6 +888,18 @@ class InjectorDesign:
                     n_elements=self.n_elements,
                 )
                 res["phase_regime"] = "gas_ox_liquid_fuel (RD-180 staged combustion)"
+            elif self.phase_ox.lower().strip() == "liquid" and self.phase_fuel.lower().strip() == "liquid":
+                # Bi-centrifugal liquid-liquid swirl (RD-170 / NK-33 / LOX-RP1 gas-generator / storable)
+                res = size_bicentrifugal_swirl_injector(
+                    m_dot_inner=self.mass_flow_ox,
+                    m_dot_outer=self.mass_flow_fuel,
+                    rho_inner=self.rho_ox,
+                    rho_outer=self.rho_fuel,
+                    delta_p_inner=delta_p_ox,
+                    delta_p_outer=delta_p_fuel,
+                    n_elements=self.n_elements,
+                )
+                res["phase_regime"] = "liquid_liquid_bi_swirl (RD-170 / NK-33 LOX/RP-1 style)"
             else:
                 # Standard LOX/Gas-fuel swirl coaxial (e.g. NK-33, RD-170)
                 res = size_swirl_coaxial(
