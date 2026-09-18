@@ -113,6 +113,8 @@ from kryptonis.propulsion_equations.injector import (
     injector_pressure_drop_stiffness,
     size_shear_coaxial,
     size_swirl_coaxial,
+    size_bicentrifugal_swirl_injector,
+    supercritical_droplet_transition_factor,
     size_pintle_injector,
     size_impinging_doublet,
     InjectorDesign,
